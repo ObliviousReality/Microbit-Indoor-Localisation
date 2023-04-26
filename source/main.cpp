@@ -14,8 +14,7 @@ void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
         loT = hiT;
-    int v = 1 << (pitchVolume >> 5);
-    pin->setAnalogValue(v);
+    pin->setAnalogValue(128);
     pin->setAnalogPeriodUs(1000000 / f);
     fiber_sleep(hiT);
     pin->setAnalogValue(0);
@@ -25,7 +24,14 @@ void playTone(int f, int hiT, int loT = -1)
 void recv()
 {
     DMESG("RECV");
-    uBit.display.print("r");
+    uBit.display.setBrightness(0);
+    for (int y = 0; y < 5; y++)
+    {
+        for (int x = 0; x < 5; x++)
+        {
+            uBit.display.image.setPixelValue(x, y, 255);
+        }
+    }
     // FFT *f = new FFT(*uBit.audio.splitter->createChannel());
     // f->recording = true;
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
@@ -33,11 +39,11 @@ void recv()
     while (true)
     {
         fiber_sleep(20);
-        int lev = sampler->getLevel();
-        if (lev > 0)
+        int lev = sampler->getMax();
+        if (lev > 1)
         {
             uBit.display.setBrightness(255);
-            DMESG("CUR LEVEL: %d", lev);
+            // DMESG("CUR LEVEL: %d", lev);
         }
         else
         {
@@ -49,6 +55,7 @@ void recv()
 void send()
 {
     uBit.display.clear();
+    DMESG("VOLUME: %d", uBit.audio.getVolume());
     while (true)
     {
         if (uBit.buttonA.isPressed())

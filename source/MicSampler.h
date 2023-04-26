@@ -15,14 +15,19 @@ public:
     void stop() { this->active = false; }
 
     int getLevel() { return this->level; }
+    int getMax() { return this->max; }
+    int getTotal() { return this->total; }
 
 private:
     DataSource &source;
     int windowSize = 128;
     int windowPos = 0;
-    int total = 0;
+    int workTotal = 0;
+    int workMax = -10000;
     bool active = false;
     int level = 0;
+    int max = 0;
+    int total = 0;
 };
 
 #endif

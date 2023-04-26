@@ -27,23 +27,37 @@ int MicSampler::pullRequest()
     {
         if (source.getFormat() == DATASTREAM_FORMAT_8BIT_SIGNED)
         {
-            total += abs((int8_t)*data);
+            workTotal += abs((int8_t)*data);
+            if ((int8_t)*data > workMax)
+            {
+                workMax = (int8_t)*data;
+            }
         }
         else
         {
-            total += abs(*data);
+            workTotal += abs(*data);
+            if (*data > workMax)
+            {
+                workMax = *data;
+            }
         }
 
         windowPos++;
         if (windowPos == windowSize)
         {
-            level = total / windowSize;
-            total = 0;
-            windowPos = 0;
+            // DMESG("workTotal: %d", workTotal);
+            // DMESG("workMax: %d", workMax);
+            level = workTotal / windowSize;
             if (source.getFormat() == DATASTREAM_FORMAT_8BIT_SIGNED)
             {
                 level = level * 8;
             }
+            max = workMax;
+            total = workTotal;
+            DMESG("%s:\t%d\t| %s:\t%d\t| %s:\t%d", "TOTAL", workTotal, "MAX", workMax, "AVERAGE", level);
+            workTotal = 0;
+            workMax = -10000;
+            windowPos = 0;
         }
         data++;
     }
