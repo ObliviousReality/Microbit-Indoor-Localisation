@@ -1,6 +1,6 @@
 #include "MicroBit.h"
 #include "samples/Tests.h"
-#include "fft.h"
+#include "MicSampler.h"
 
 MicroBit uBit;
 SoundOutputPin *pin = &uBit.audio.virtualOutputPin;
@@ -24,12 +24,16 @@ void playTone(int f, int hiT, int loT = -1)
 
 void recv()
 {
-    uBit.display.clear();
-    FFT *f = new FFT(*uBit.audio.splitter->createChannel());
+    DMESG("RECV");
+    uBit.display.print("r");
+    // FFT *f = new FFT(*uBit.audio.splitter->createChannel());
+    // f->recording = true;
+    MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
+    sampler->start();
     while (true)
     {
-        uBit.display.print(f->dataPoint);
-        // uBit.audio.activateMic();
+        fiber_sleep(100);
+        DMESG("CUR LEVEL: %d", sampler->getLevel());
     }
 }
 
@@ -67,10 +71,12 @@ int main()
         if (uBit.buttonA.isPressed())
         {
             send();
+            break;
         }
         else if (uBit.buttonB.isPressed())
         {
             recv();
+            break;
         }
         uBit.sleep(500);
     }
