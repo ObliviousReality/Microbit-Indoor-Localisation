@@ -32,8 +32,17 @@ void recv()
     sampler->start();
     while (true)
     {
-        fiber_sleep(100);
-        DMESG("CUR LEVEL: %d", sampler->getLevel());
+        fiber_sleep(20);
+        int lev = sampler->getLevel();
+        if (lev > 0)
+        {
+            uBit.display.setBrightness(255);
+            DMESG("CUR LEVEL: %d", lev);
+        }
+        else
+        {
+            uBit.display.setBrightness(0);
+        }
     }
 }
 
