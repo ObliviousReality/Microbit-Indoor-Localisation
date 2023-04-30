@@ -4,6 +4,8 @@
 #ifndef MIC_SAMPLER_H
 #define MIC_SAMPLER_H
 
+#define WINDOW_SIZE 128
+
 class MicSampler : public DataSink
 {
 public:
@@ -17,17 +19,23 @@ public:
     int getLevel() { return this->level; }
     int getMax() { return this->max; }
     int getTotal() { return this->total; }
+    ManagedBuffer *getBuffer() { return this->buffer; }
 
 private:
     DataSource &source;
-    int windowSize = 128;
+    int windowSize = WINDOW_SIZE; // May be worth changing.
+
     int windowPos = 0;
     int workTotal = 0;
     int workMax = -10000;
+
     bool active = false;
+
     int level = 0;
     int max = 0;
     int total = 0;
+    int16_t *buf;
+    ManagedBuffer *buffer;
 };
 
 #endif

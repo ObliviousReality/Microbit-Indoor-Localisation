@@ -3,6 +3,7 @@
 MicSampler::MicSampler(DataSource &s) : source(s)
 {
     source.connect(*this);
+    buf = (int16_t *)malloc(sizeof(int16_t) * windowSize * 2);
 }
 
 MicSampler::~MicSampler()
@@ -19,6 +20,8 @@ int MicSampler::pullRequest()
 
     ManagedBuffer b = source.pull();
 
+    buffer = &b;
+
     int16_t *data = (int16_t *)&b[0];
 
     int samples = b.length() / 2;
@@ -28,18 +31,22 @@ int MicSampler::pullRequest()
         if (source.getFormat() == DATASTREAM_FORMAT_8BIT_SIGNED)
         {
             workTotal += abs((int8_t)*data);
-            if ((int8_t)*data > workMax)
+            if (abs((int8_t)*data) > workMax)
             {
-                workMax = (int8_t)*data;
+                workMax = abs((int8_t)*data);
             }
+            buf[windowPos] = abs((int8_t)*data);
+            // DMESG("DATA: %d", (int8_t)*data);
         }
         else
         {
             workTotal += abs(*data);
-            if (*data > workMax)
+            if (abs(*data) > workMax)
             {
-                workMax = *data;
+                workMax = abs(*data);
             }
+            buf[windowPos] = abs(*data);
+            // DMESG("DATA: %d", *data);
         }
 
         windowPos++;
@@ -54,7 +61,8 @@ int MicSampler::pullRequest()
             }
             max = workMax;
             total = workTotal;
-            DMESG("%s:\t%d\t| %s:\t%d\t| %s:\t%d", "TOTAL", workTotal, "MAX", workMax, "AVERAGE", level);
+            // DMESG("%s:\t%d\t| %s:\t%d\t| %s:\t%d", "TOTAL", workTotal, "MAX", workMax, "AVERAGE",
+            //   level);
             workTotal = 0;
             workMax = -10000;
             windowPos = 0;

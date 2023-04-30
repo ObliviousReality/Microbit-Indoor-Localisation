@@ -87,3 +87,27 @@ private:
 };
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+for (int i = 0; i < WINDOW_SIZE; i++)
+        {
+            // DMESG("HELLO!");
+            DMESG("%d", (int8_t)*data);
+            // in[i].r = *((float *)&buf[i]);
+            in[i].r = (int)(int8_t)*data;
+            in[i].i = 0;
+            data++;
+        }
+        kiss_fft(cfg, in, out);
+
+for (int i = 0; i < WINDOW_SIZE; i++)
+            DMESG("%d, %d, %d, %d, %d", i, in[i].r, in[i].i, out[i].r, out[i].i);d

@@ -32,8 +32,6 @@ void recv()
             uBit.display.image.setPixelValue(x, y, 255);
         }
     }
-    // FFT *f = new FFT(*uBit.audio.splitter->createChannel());
-    // f->recording = true;
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
     sampler->start();
     while (true)
@@ -42,13 +40,15 @@ void recv()
         int lev = sampler->getMax();
         if (lev > 1)
         {
-            uBit.display.setBrightness(255);
+            uBit.display.setBrightness(lev);
             // DMESG("CUR LEVEL: %d", lev);
         }
         else
         {
             uBit.display.setBrightness(0);
         }
+        ManagedBuffer *buf = sampler->getBuffer();
+        int16_t *data = (int16_t *)&buf[0];
     }
 }
 

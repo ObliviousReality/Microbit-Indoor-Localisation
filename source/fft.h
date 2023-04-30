@@ -1,15 +1,24 @@
-#include "MicroBit.h"
-#include "DataStream.h"
-#define ARM_MATH_CM4
-#include "arm_math.h"
+// #include "MicroBit.h"
+// #include <complex>
+// #include <iostream>
+// #include <valarray>
 
-#ifndef FFT_H
-#define FFT_H
+// #ifndef FFT_H
+// #define FFT_H
 
-class FFT
-{
-public:
-    FFT();
-};
+// typedef std::complex<int16_t> Complex;
+// typedef std::valarray<Complex> CArray;
 
-#endif
+// class FFT
+// {
+// public:
+//     FFT();
+//     void process();
+//     void setData(CArray &d) { this->data = d; }
+//     CArray getData() { return data; }
+
+// private:
+//     CArray data;
+// };
+
+// #endif
