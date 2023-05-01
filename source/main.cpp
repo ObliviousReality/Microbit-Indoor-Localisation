@@ -1,6 +1,7 @@
 #include "MicroBit.h"
 #include "samples/Tests.h"
 #include "MicSampler.h"
+#include "fft.h"
 
 MicroBit uBit;
 SoundOutputPin *pin = &uBit.audio.virtualOutputPin;
@@ -37,18 +38,45 @@ void recv()
     while (true)
     {
         fiber_sleep(20);
-        int lev = sampler->getMax();
-        if (lev > 1)
-        {
-            uBit.display.setBrightness(lev);
-            // DMESG("CUR LEVEL: %d", lev);
-        }
-        else
-        {
-            uBit.display.setBrightness(0);
-        }
-        ManagedBuffer *buf = sampler->getBuffer();
-        int16_t *data = (int16_t *)&buf[0];
+        // int lev = sampler->getMax();
+        // if (lev > 1)
+        // {
+        //     uBit.display.setBrightness(lev);
+        //     // DMESG("CUR LEVEL: %d", lev);
+        // }
+        // else
+        // {
+        //     uBit.display.setBrightness(0);
+        // }
+        // ManagedBuffer *buf = sampler->getBuffer();
+        // int16_t *data = (int16_t *)&buf[0];
+    }
+}
+
+void test()
+{
+    DMESG("TEST");
+    DMESG("-69: %d", (int)-69.4254235);
+    FFT *f = new FFT();
+    // ManagedBuffer *buf = sampler->getBuffer();
+    // int16_t *data = (int16_t *)&buf[0];
+    // std::vector<double> vec;
+    // for (int i = 0; i < buf->length(); i++)
+    // {
+    //     vec.push_back(abs((int8_t)*data));
+    //     data++;
+    // }
+
+    double data[] = {-69, -65, -72, -67, -65};
+    for (int i = 0; i < 5; i++)
+    {
+        f->addSample(data[i]);
+    }
+    f->DFT();
+    DMESG("DFT DONE!");
+    while (true)
+    {
+        fiber_sleep(200);
     }
 }
 
@@ -92,6 +120,11 @@ int main()
         else if (uBit.buttonB.isPressed())
         {
             recv();
+            break;
+        }
+        else if (uBit.logo.isPressed())
+        {
+            test();
             break;
         }
         uBit.sleep(500);
