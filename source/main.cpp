@@ -11,6 +11,8 @@ char prompts[] = {'<', 'S', '<', ' ', '>', 'R', '>', ' '};
 int promptCounter = 0;
 const int MAXPROMPTS = 8;
 
+int radioRecv = 0;
+
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
@@ -35,38 +37,7 @@ void recv()
     }
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
     sampler->start();
-    while (true)
-    {
-        fiber_sleep(20);
-        // int lev = sampler->getMax();
-        // if (lev > 1)
-        // {
-        //     uBit.display.setBrightness(lev);
-        //     // DMESG("CUR LEVEL: %d", lev);
-        // }
-        // else
-        // {
-        //     uBit.display.setBrightness(0);
-        // }
-        // ManagedBuffer *buf = sampler->getBuffer();
-        // int16_t *data = (int16_t *)&buf[0];
-    }
-}
-
-void test()
-{
-    DMESG("TEST");
-    PRINTFLOAT(1.234);
     FFT *f = new FFT();
-    // ManagedBuffer *buf = sampler->getBuffer();
-    // int16_t *data = (int16_t *)&buf[0];
-    // std::vector<double> vec;
-    // for (int i = 0; i < buf->length(); i++)
-    // {
-    //     vec.push_back(abs((int8_t)*data));
-    //     data++;
-    // }
-
     double data[] = {-69, -65, -72, -67, -65};
     for (int i = 0; i < 5; i++)
     {
@@ -79,14 +50,55 @@ void test()
     DMESG("FFT DONE!");
     while (true)
     {
-        fiber_sleep(200);
+        fiber_sleep(20);
+        int lev = sampler->getMax();
+        if (lev > 1)
+        {
+            uBit.display.setBrightness(lev);
+            // DMESG("CUR LEVEL: %d", lev);
+        }
+        else
+        {
+            uBit.display.setBrightness(0);
+        }
+        // ManagedBuffer *buf = sampler->getBuffer();
+        // int16_t *data = (int16_t *)&buf[0];
+        // std::vector<double> vec;
+        // for (int i = 0; i < buf->length(); i++)
+        // {
+        //     vec.push_back(abs((int8_t)*data));
+        //     data++;
+        // }
     }
 }
+
+// void test()
+// {
+//     DMESG("TEST");
+//     PRINTFLOAT(1.234);
+//     FFT *f = new FFT();
+
+//     double data[] = {-69, -65, -72, -67, -65};
+//     for (int i = 0; i < 5; i++)
+//     {
+//         f->addSample(data[i]);
+//     }
+//     f->DFT();
+//     DMESG("DFT DONE!");
+//     f->processComplex();
+//     // f->processReal();
+//     DMESG("FFT DONE!");
+//     while (true)
+//     {
+//         fiber_sleep(200);
+//     }
+// }
 
 void send()
 {
     uBit.display.clear();
     DMESG("VOLUME: %d", uBit.audio.getVolume());
+    uBit.radio.setGroup(5);
     while (true)
     {
         if (uBit.buttonA.isPressed())
@@ -94,7 +106,9 @@ void send()
             uBit.display.clear();
             while (true)
             {
-                playTone(8000, 20, 1000);
+                uBit.radio.datagram.send("THERE");
+                fiber_sleep(20);
+                // playTone(8000, 20, 1000);
                 if (uBit.buttonB.isPressed())
                 {
                     uBit.display.print("x");
@@ -105,10 +119,24 @@ void send()
     }
 }
 
+static void radioReceive(MicroBitEvent)
+{
+    PacketBuffer b = uBit.radio.datagram.recv();
+    DMESG("BYTES: %s", b.getBytes());
+    DMESG("LENGTH: %d", b.length());
+    // for (int i = 0; i < b.length(); i++)
+    // {
+    //     DMESG("%s", b[i]);
+    // }
+}
+
 int main()
 {
     uBit.init();
-    DMESG("INIT");
+    DMESG("INIT!");
+    uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
+    uBit.radio.enable();
+    uBit.radio.setGroup(5);
     while (true)
     {
         uBit.display.print(prompts[promptCounter++]);
@@ -116,6 +144,11 @@ int main()
         {
             promptCounter = 0;
         }
+        // if (uBit.buttonAB.isPressed())
+        // {
+        //     test();
+        //     break;
+        // }
         if (uBit.buttonA.isPressed())
         {
             send();
@@ -123,7 +156,7 @@ int main()
         }
         else if (uBit.buttonB.isPressed())
         {
-            test();
+            recv();
             break;
         }
         // else if (uBit.logo.isPressed())
