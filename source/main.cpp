@@ -2,6 +2,7 @@
 #include "samples/Tests.h"
 #include "MicSampler.h"
 #include "fft.h"
+#include <cstring>
 // #include "global.h"
 
 MicroBit uBit;
@@ -94,11 +95,29 @@ void recv()
 //     }
 // }
 
+std::string uint64_to_string(uint64_t value)
+{
+    std::ostringstream os;
+    os << value;
+    return os.str();
+}
+
 void send()
 {
     uBit.display.clear();
     DMESG("VOLUME: %d", uBit.audio.getVolume());
     uBit.radio.setGroup(5);
+    char name[7];
+    uint64_t serial = uBit.getSerialNumber();
+    uint64_t val = serial;
+    for (int i = 0; i < 6; i++)
+    {
+        name[i] = 65 + ((val / 2) % 26);
+        val = (int)(val / 2);
+    }
+    name[6] = '\0';
+    DMESG("%s", name);
+
     while (true)
     {
         if (uBit.buttonA.isPressed())
@@ -106,7 +125,7 @@ void send()
             uBit.display.clear();
             while (true)
             {
-                uBit.radio.datagram.send("THERE");
+                uBit.radio.datagram.send("hew");
                 fiber_sleep(20);
                 // playTone(8000, 20, 1000);
                 if (uBit.buttonB.isPressed())
