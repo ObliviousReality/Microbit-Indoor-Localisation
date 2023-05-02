@@ -2,10 +2,10 @@
 #include "samples/Tests.h"
 #include "MicSampler.h"
 #include "fft.h"
+// #include "global.h"
 
 MicroBit uBit;
 SoundOutputPin *pin = &uBit.audio.virtualOutputPin;
-uint8_t pitchVolume = 0xff;
 
 char prompts[] = {'<', 'S', '<', ' ', '>', 'R', '>', ' '};
 int promptCounter = 0;
@@ -56,7 +56,7 @@ void recv()
 void test()
 {
     DMESG("TEST");
-    DMESG("-69: %d", (int)-69.4254235);
+    PRINTFLOAT(1.234);
     FFT *f = new FFT();
     // ManagedBuffer *buf = sampler->getBuffer();
     // int16_t *data = (int16_t *)&buf[0];
@@ -74,6 +74,9 @@ void test()
     }
     f->DFT();
     DMESG("DFT DONE!");
+    f->processComplex();
+    // f->processReal();
+    DMESG("FFT DONE!");
     while (true)
     {
         fiber_sleep(200);
@@ -105,6 +108,7 @@ void send()
 int main()
 {
     uBit.init();
+    DMESG("INIT");
     while (true)
     {
         uBit.display.print(prompts[promptCounter++]);
@@ -119,14 +123,14 @@ int main()
         }
         else if (uBit.buttonB.isPressed())
         {
-            recv();
-            break;
-        }
-        else if (uBit.logo.isPressed())
-        {
             test();
             break;
         }
+        // else if (uBit.logo.isPressed())
+        // {
+        //     test();
+        //     break;
+        // }
         uBit.sleep(500);
     }
 }
