@@ -8,6 +8,8 @@
 #ifndef FFT_H
 #define FFT_H
 
+#define MIC_SAMPLE_RATE 11111 // apparently
+
 class FFT
 {
 public:
@@ -41,7 +43,7 @@ public:
     {
         this->DFTInput.push_back(s);
         // PRINTFLOATMSG("ADDING", s);
-        PRINTFLOAT(s);
+        // PRINTFLOAT(s);
         this->sampleNumber++;
     }
     void clearSamples()

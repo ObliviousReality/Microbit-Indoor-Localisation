@@ -66,7 +66,7 @@ void recv()
     long time = uBit.systemTime();
     while (true)
     {
-        DMESG("LOOP");
+        // DMESG("LOOP");
         fiber_sleep(20);
         int lev = sampler->getMax();
         if (lev > 1)
@@ -86,22 +86,18 @@ void recv()
             f->addSample((int8_t)*data);
             data++;
         }
-        DMESG("LENGTH: %d", f->getSampleNumber());
+        // DMESG("LENGTH: %d", f->getSampleNumber());
         // f->DFT();
         // DMESG("DFT DONE!");
         f->processReal();
         // f->processComplex();
-        DMESG("FFT DONE!");
-        DMESG("TIME: %d", (int)(uBit.systemTime() - time));
+        // DMESG("FFT DONE!");
+        // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
         if (uBit.systemTime() - time >= RECVTIMEOUT)
         {
             DMESG("TIMEOUT");
             sampler->stop();
             break;
-        }
-        else
-        {
-            DMESG("STILL IN RECV");
         }
     }
     DMESG("GOING TO SEND");
@@ -190,6 +186,15 @@ static void radioReceive(MicroBitEvent)
     recv();
 }
 
+void bee()
+{
+    while (true)
+    {
+        playTone(8000, 1000, 0);
+        // buzz
+    }
+}
+
 int main()
 {
     uBit.init();
@@ -205,6 +210,8 @@ int main()
     uBit.radio.setGroup(5);
     uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
+
+    PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
     while (true)
     {
         // fiber_sleep(20);
