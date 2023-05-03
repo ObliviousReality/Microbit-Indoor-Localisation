@@ -42,6 +42,12 @@ public:
         this->DFTInput.push_back(s);
         PRINTFLOATMSG("ADDING", s);
     }
+    void clearSamples()
+    {
+        this->DFTInput.clear();
+        this->DFTOutput.clear();
+        this->FFTOutput.clear();
+    }
     std::vector<std::complex<double>> *getDFTOutput() { return &DFTOutput; }
 
 private:

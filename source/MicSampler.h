@@ -13,8 +13,16 @@ public:
     ~MicSampler();
     virtual int pullRequest();
 
-    void start() { this->active = true; }
-    void stop() { this->active = false; }
+    void start()
+    {
+        this->active = true;
+        uBit.audio.activateMic();
+    }
+    void stop()
+    {
+        this->active = false;
+        uBit.audio.deactivateMic();
+    }
 
     int getLevel() { return this->level; }
     int getMax() { return this->max; }

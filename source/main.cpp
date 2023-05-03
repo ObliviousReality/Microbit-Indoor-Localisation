@@ -3,7 +3,11 @@
 #include "MicSampler.h"
 #include "fft.h"
 #include <cstring>
-// #include "global.h"
+
+#define RECVTIMEOUT 1000
+
+static void radioReceive(MicroBitEvent);
+void recv();
 
 MicroBit uBit;
 SoundOutputPin *pin = &uBit.audio.virtualOutputPin;
@@ -12,7 +16,15 @@ char prompts[] = {'<', 'S', '<', ' ', '>', 'R', '>', ' '};
 int promptCounter = 0;
 const int MAXPROMPTS = 8;
 
-int radioRecv = 0;
+char name[7];
+
+FFT *f;
+
+void initialise()
+{
+
+    f = new FFT();
+}
 
 void playTone(int f, int hiT, int loT = -1)
 {
@@ -25,10 +37,23 @@ void playTone(int f, int hiT, int loT = -1)
     fiber_sleep(loT);
 }
 
+void send()
+{
+    DMESG("SEND");
+    uBit.display.print("S");
+    while (true)
+    {
+        uBit.radio.datagram.send(name);
+        // fiber_sleep(20);
+        playTone(8000, 20, 1000);
+    }
+}
+
 void recv()
 {
     DMESG("RECV");
     uBit.display.setBrightness(0);
+    MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
     for (int y = 0; y < 5; y++)
     {
         for (int x = 0; x < 5; x++)
@@ -36,19 +61,17 @@ void recv()
             uBit.display.image.setPixelValue(x, y, 255);
         }
     }
-    MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
+
     sampler->start();
-    FFT *f = new FFT();
-    double data[] = {-69, -65, -72, -67, -65};
-    for (int i = 0; i < 5; i++)
-    {
-        f->addSample(data[i]);
-    }
-    f->DFT();
-    DMESG("DFT DONE!");
-    f->processComplex();
-    // f->processReal();
-    DMESG("FFT DONE!");
+    // f->clearSamples();
+
+    // double data[] = {-69, -65, -72, -67, -65};
+    // for (int i = 0; i < 5; i++)
+    // {
+    //     f->addSample(data[i]);
+    // }
+
+    long time = uBit.systemTime();
     while (true)
     {
         fiber_sleep(20);
@@ -64,13 +87,32 @@ void recv()
         }
         // ManagedBuffer *buf = sampler->getBuffer();
         // int16_t *data = (int16_t *)&buf[0];
-        // std::vector<double> vec;
         // for (int i = 0; i < buf->length(); i++)
         // {
-        //     vec.push_back(abs((int8_t)*data));
+        //     f->addSample((int8_t)*data);
         //     data++;
         // }
+        // f->DFT();
+        // DMESG("DFT DONE!");
+        // f->processReal(); // Currently not working, don't know why.
+        // f->processComplex();
+        // DMESG("FFT DONE!");
+        DMESG("TIME: %d", (int)(uBit.systemTime() - time));
+        if (uBit.systemTime() - time >= RECVTIMEOUT)
+        {
+            DMESG("TIMEOUT");
+            sampler->stop();
+            break;
+        }
+        else
+        {
+            DMESG("STILL IN RECV");
+        }
     }
+    DMESG("GOING TO SEND");
+    uBit.display.setBrightness(255);
+    uBit.radio.enable();
+    send();
 }
 
 // void test()
@@ -102,79 +144,48 @@ std::string uint64_to_string(uint64_t value)
     return os.str();
 }
 
-void send()
+static void radioReceive(MicroBitEvent)
 {
-    uBit.display.clear();
-    DMESG("VOLUME: %d", uBit.audio.getVolume());
-    uBit.radio.setGroup(5);
-    char name[7];
-    uint64_t serial = uBit.getSerialNumber();
-    uint64_t val = serial;
+    uBit.display.print("J");
+    PacketBuffer b = uBit.radio.datagram.recv();
+    DMESG("MESSAGE FROM: %s", b.getBytes());
+    uBit.radio.disable();
+    recv();
+}
+
+int main()
+{
+    uBit.init();
+    initialise();
+    DMESG("INIT!");
+    uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {
         name[i] = 65 + ((val / 2) % 26);
         val = (int)(val / 2);
     }
     name[6] = '\0';
-    DMESG("%s", name);
-
-    while (true)
-    {
-        if (uBit.buttonA.isPressed())
-        {
-            uBit.display.clear();
-            while (true)
-            {
-                uBit.radio.datagram.send("hew");
-                fiber_sleep(20);
-                // playTone(8000, 20, 1000);
-                if (uBit.buttonB.isPressed())
-                {
-                    uBit.display.print("x");
-                    break;
-                }
-            }
-        }
-    }
-}
-
-static void radioReceive(MicroBitEvent)
-{
-    PacketBuffer b = uBit.radio.datagram.recv();
-    DMESG("BYTES: %s", b.getBytes());
-    DMESG("LENGTH: %d", b.length());
-    // for (int i = 0; i < b.length(); i++)
-    // {
-    //     DMESG("%s", b[i]);
-    // }
-}
-
-int main()
-{
-    uBit.init();
-    DMESG("INIT!");
+    DMESG("Hello, I'm %s", name);
+    uBit.radio.setGroup(5);
     uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
-    uBit.radio.setGroup(5);
     while (true)
     {
-        uBit.display.print(prompts[promptCounter++]);
-        if (promptCounter > MAXPROMPTS)
-        {
-            promptCounter = 0;
-        }
-        // if (uBit.buttonAB.isPressed())
+        // fiber_sleep(20);
+        // uBit.display.print(prompts[promptCounter++]);
+        // if (promptCounter > MAXPROMPTS)
         // {
-        //     test();
-        //     break;
+        //     promptCounter = 0;
         // }
         if (uBit.buttonA.isPressed())
         {
+            DMESG("A");
             send();
             break;
         }
         else if (uBit.buttonB.isPressed())
         {
+            DMESG("B");
             recv();
             break;
         }

@@ -4,6 +4,7 @@ MicSampler::MicSampler(DataSource &s) : source(s)
 {
     source.connect(*this);
     buf = (int16_t *)malloc(sizeof(int16_t) * windowSize * 2);
+    DMESG("SAMPLER ONLINE");
 }
 
 MicSampler::~MicSampler()
