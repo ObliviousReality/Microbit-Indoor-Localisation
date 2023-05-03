@@ -16,18 +16,18 @@ public:
     void start()
     {
         this->active = true;
-        uBit.audio.activateMic();
+        // uBit.audio.activateMic();
     }
     void stop()
     {
         this->active = false;
-        uBit.audio.deactivateMic();
+        // uBit.audio.deactivateMic();
     }
 
     int getLevel() { return this->level; }
     int getMax() { return this->max; }
     int getTotal() { return this->total; }
-    ManagedBuffer *getBuffer() { return this->buffer; }
+    ManagedBuffer getBuffer() { return this->buffer; }
 
 private:
     DataSource &source;
@@ -43,7 +43,7 @@ private:
     int max = 0;
     int total = 0;
     int16_t *buf;
-    ManagedBuffer *buffer;
+    ManagedBuffer buffer;
 };
 
 #endif

@@ -17,26 +17,25 @@ void FFT::processComplex()
 
     kiss_fft(cfg, in, out);
 
-    for (int i = 0; i < SampleNumber; i++)
-        PRINTFIVEFLOAT(i, in[i].r, in[i].i, out[i].r, out[i].i);
+    // for (int i = 0; i < SampleNumber; i++)
+    //     PRINTFIVEFLOAT(i, in[i].r, in[i].i, out[i].r, out[i].i);
     free(cfg);
 }
 
 void FFT::processReal()
 {
-    int SampleNumber = DFTOutput.size();
-    DMESG("SAMPLE NUMBER: %d", SampleNumber);
-    cfgr = kiss_fftr_alloc(DFTOutput.size(), 0, NULL, NULL);
-    kiss_fft_scalar inr[SampleNumber];
-    kiss_fft_cpx out[SampleNumber];
-    for (int i = 0; i < SampleNumber; i++)
+    DMESG("SAMPLE NUMBER: %d", sampleNumber);
+    cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
+    kiss_fft_scalar inr[sampleNumber];
+    kiss_fft_cpx out[sampleNumber / 2 + 1];
+    for (int i = 0; i < sampleNumber; i++)
     {
         inr[i] = DFTInput.at(i);
     }
 
     kiss_fftr(cfgr, inr, out);
 
-    for (int i = 0; i < SampleNumber; i++)
+    for (int i = 0; i < sampleNumber; i++)
         PRINTFOURFLOAT(i, inr[i], out[i].r, out[i].i);
 
     free(cfgr);

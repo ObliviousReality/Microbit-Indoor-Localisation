@@ -16,7 +16,7 @@ public:
     void processReal();
     void DFT()
     {
-        int len = DFTInput.size();
+        int len = sampleNumber;
         DMESG("LEN: %d", len);
         float r, i;
         for (int k = 0; k < len; k++)
@@ -40,17 +40,24 @@ public:
     void addSample(float s)
     {
         this->DFTInput.push_back(s);
-        PRINTFLOATMSG("ADDING", s);
+        // PRINTFLOATMSG("ADDING", s);
+        PRINTFLOAT(s);
+        this->sampleNumber++;
     }
     void clearSamples()
     {
         this->DFTInput.clear();
         this->DFTOutput.clear();
         this->FFTOutput.clear();
+        this->sampleNumber = 0;
     }
     std::vector<std::complex<double>> *getDFTOutput() { return &DFTOutput; }
 
+    int getSampleNumber() { return this->sampleNumber; }
+
 private:
+    int sampleNumber = 0;
+
     std::vector<double> DFTInput;
     // std::vector<double> real;
     // std::vector<double> imaginary;

@@ -18,14 +18,6 @@ const int MAXPROMPTS = 8;
 
 char name[7];
 
-FFT *f;
-
-void initialise()
-{
-
-    f = new FFT();
-}
-
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
@@ -54,6 +46,7 @@ void recv()
     DMESG("RECV");
     uBit.display.setBrightness(0);
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
+    FFT *f = new FFT();
     for (int y = 0; y < 5; y++)
     {
         for (int x = 0; x < 5; x++)
@@ -63,17 +56,17 @@ void recv()
     }
 
     sampler->start();
-    // f->clearSamples();
 
     // double data[] = {-69, -65, -72, -67, -65};
     // for (int i = 0; i < 5; i++)
     // {
     //     f->addSample(data[i]);
     // }
-
+    DMESG("LOOP START");
     long time = uBit.systemTime();
     while (true)
     {
+        DMESG("LOOP");
         fiber_sleep(20);
         int lev = sampler->getMax();
         if (lev > 1)
@@ -85,18 +78,20 @@ void recv()
         {
             uBit.display.setBrightness(0);
         }
-        // ManagedBuffer *buf = sampler->getBuffer();
-        // int16_t *data = (int16_t *)&buf[0];
-        // for (int i = 0; i < buf->length(); i++)
-        // {
-        //     f->addSample((int8_t)*data);
-        //     data++;
-        // }
+        ManagedBuffer buf = sampler->getBuffer();
+        int16_t *data = (int16_t *)&buf[0];
+        f->clearSamples();
+        for (int i = 0; i < 128; i++)
+        {
+            f->addSample((int8_t)*data);
+            data++;
+        }
+        DMESG("LENGTH: %d", f->getSampleNumber());
         // f->DFT();
         // DMESG("DFT DONE!");
-        // f->processReal(); // Currently not working, don't know why.
+        f->processReal();
         // f->processComplex();
-        // DMESG("FFT DONE!");
+        DMESG("FFT DONE!");
         DMESG("TIME: %d", (int)(uBit.systemTime() - time));
         if (uBit.systemTime() - time >= RECVTIMEOUT)
         {
@@ -115,27 +110,69 @@ void recv()
     send();
 }
 
-// void test()
-// {
-//     DMESG("TEST");
-//     PRINTFLOAT(1.234);
-//     FFT *f = new FFT();
+void test()
+{
+    DMESG("TEST");
+    fiber_sleep(20);
+    FFT *f = new FFT();
 
-//     double data[] = {-69, -65, -72, -67, -65};
-//     for (int i = 0; i < 5; i++)
-//     {
-//         f->addSample(data[i]);
-//     }
-//     f->DFT();
-//     DMESG("DFT DONE!");
-//     f->processComplex();
-//     // f->processReal();
-//     DMESG("FFT DONE!");
-//     while (true)
-//     {
-//         fiber_sleep(200);
-//     }
-// }
+    double data[] = {
+        -8.0,   -9.0,   -9.0,   -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,  -8.0,
+        -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -8.0,  -8.0,
+        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -9.0,   -8.0,   -9.0,   -8.0,  -8.0,
+        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -8.0,   -8.0,   -9.0,   -8.0,  -9.0,
+        -8.0,   -8.0,   -9.0,   -8.0,   -7.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,  -9.0,
+        -8.0,   -9.0,   -9.0,   -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,  -8.0,
+        -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -8.0,  -8.0,
+        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -9.0,   -8.0,   -9.0,   -8.0,  -8.0,
+        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -8.0,   -8.0,   -9.0,   -8.0,  -9.0,
+        -8.0,   -8.0,   -9.0,   -8.0,   -7.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,  -9.0,
+        -8.0,   -8.0,   -9.0,   -8.0,   -7.0,   -8.0,   -7.0,   -9.0,   -8.0,   -7.0,  -8.0,
+        -7.0,   -7.0,   -8.0,   -7.0,   -7.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,  -8.0,
+        -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -7.0,   -7.0,   -8.0,   -7.0,  -8.0,
+        -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -7.0,   -9.0,   -8.0,   -8.0,   -8.0,  -7.0,
+        -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -8.0,   -7.0,   -7.0,   -7.0,   -8.0,  -8.0,
+        -8.0,   -8.0,   -7.0,   -7.0,   -8.0,   -7.0,   -7.0,   -7.0,   -7.0,   -7.0,  -7.0,
+        -7.0,   -7.0,   -7.0,   -7.0,   -7.0,   -6.0,   -7.0,   64.0,   0.0,    0.0,   0.0,
+        0.0,    32.0,   5.0,    0.0,    0.0,    0.0,    0.0,    32.0,   0.0,    0.0,   0.0,
+        34.0,   9.0,    0.0,    0.0,    0.0,    0.0,    32.0,   0.0,    0.0,    0.0,   34.0,
+        0.0,    0.0,    0.0,    34.0,   0.0,    0.0,    0.0,    34.0,   17.0,   0.0,   0.0,
+        0.0,    0.0,    32.0,   0.0,    0.0,    0.0,    34.0,   0.0,    0.0,    0.0,   34.0,
+        0.0,    0.0,    0.0,    34.0,   0.0,    0.0,    0.0,    32.0,   0.0,    0.0,   0.0,
+        32.0,   0.0,    0.0,    0.0,    32.0,   0.0,    0.0,    0.0,    32.0,   30.0,  0.0,
+        -108.0, -108.0, -93.0,  -105.0, -101.0, -94.0,  -98.0,  -100.0, -89.0,  -96.0, -100.0,
+        -104.0, -97.0,  -102.0, -104.0, -85.0,  -94.0,  -104.0, -104.0, -97.0,  -90.0, -98.0,
+        -96.0,  -103.0, -101.0, -106.0, -100.0, -97.0,  -104.0, -93.0,  -103.0, -98.0, -106.0,
+        -102.0, -97.0,  -99.0,  -89.0,  -94.0,  -106.0, -98.0,  -104.0, -91.0,  -98.0, -98.0,
+        -104.0, -97.0,  -104.0, -101.0, -96.0,  -99.0,  -96.0,  -106.0, -107.0, -88.0, -101.0,
+        -102.0, -94.0,  -104.0};
+    for (int i = 0; i < 128; i++)
+    {
+        f->addSample(data[i]);
+    }
+    long st = uBit.systemTime();
+    // f->DFT();
+    long et = uBit.systemTime();
+    // std::vector<std::complex<double>> *out = f->getDFTOutput();
+    // for (int i = 0; i < f->getSampleNumber(); i++)
+    // {
+    //     PRINTFOURFLOAT(i, data[i], out->at(i).real(), out->at(i).imag());
+    // }
+
+    DMESG("DFT DONE!");
+
+    DMESG("PROCESSING TIME: %d", (int)(et - st));
+    st = uBit.systemTime();
+    // f->processComplex();
+    f->processReal();
+    et = uBit.systemTime();
+    DMESG("FFT DONE!");
+    DMESG("PROCESSING TIME: %d", (int)(et - st));
+    while (true)
+    {
+        fiber_sleep(200);
+    }
+}
 
 std::string uint64_to_string(uint64_t value)
 {
@@ -156,7 +193,6 @@ static void radioReceive(MicroBitEvent)
 int main()
 {
     uBit.init();
-    initialise();
     DMESG("INIT!");
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)

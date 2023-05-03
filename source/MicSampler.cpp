@@ -21,7 +21,7 @@ int MicSampler::pullRequest()
 
     ManagedBuffer b = source.pull();
 
-    buffer = &b;
+    buffer = b;
 
     int16_t *data = (int16_t *)&b[0];
 
