@@ -34,20 +34,25 @@ bool FFT::processReal()
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
     int ind = 2700 / rate;
-    PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
-    if (freq > TRANSMIT_FREQUENCY - 100 && freq < TRANSMIT_FREQUENCY + 100)
-    {
-        DMESG("IN RANGE");
-        PRINTFLOATMSG("FREQUENCY", freq);
-        PRINTFLOAT(mag[ind]);
-        return true;
-    }
+    // PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
+    // if (freq > TRANSMIT_FREQUENCY - 100 && freq < TRANSMIT_FREQUENCY + 100)
+    // {
+    //     DMESG("IN RANGE");
+    //     PRINTFLOATMSG("FREQUENCY", freq);
+    //     PRINTFLOAT(mag[ind]);
+    //     return true;
+    // }
     if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
     {
+        PRINTFLOATMSG("MAG:", mag[ind]);
+        if (mag[ind] < 10)
+        {
+            DMESG("MAG TOO LOW");
+            return false;
+        }
         DMESG("HALVE IN RANGE");
         PRINTFLOATMSG("FREQUENCY", freq);
         PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
-        PRINTFLOATMSG("MAG:", mag[ind]);
         return true;
     }
     return false;

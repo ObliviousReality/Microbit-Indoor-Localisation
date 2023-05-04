@@ -16,3 +16,4 @@
 
 #define MIC_SAMPLE_RATE 11111 // apparently
 
+#define SPEEDOFSOUND 343

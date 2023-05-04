@@ -2,6 +2,7 @@
 #include "samples/Tests.h"
 #include "MicSampler.h"
 #include "fft.h"
+#include "global.h"
 
 static void radioReceive(MicroBitEvent);
 void recv();
@@ -46,11 +47,22 @@ void send()
     }
 }
 
+void distanceCalculation()
+{
+    uBit.display.print("C");
+    double time = sampler->getTime() - radioRecvTime;
+    double distance = SPEEDOFSOUND * (time / 1000.0f);
+    PRINTFLOATMSG("DISTANCE CALCULATED", distance);
+    send();
+}
+
 void recv()
 {
     bool timeoutTriggered = false;
+    uBit.display.print("R");
     long time = uBit.systemTime();
     PRINTFLOATMSG("LOOP START", time);
+    radioRecvTime = uBit.systemTime();
     while (true)
     {
         audioRecvTime = uBit.systemTime();
@@ -71,20 +83,21 @@ void recv()
             PRINTFLOATMSG("TIME DIFFERENCE", sampler->getTime() - radioRecvTime);
         }
         // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
+        // fiber_sleep(1);
         if (timeoutTriggered)
         {
             DMESG("END");
             sampler->stop();
             break;
         }
-        fiber_sleep(1);
+        PRINTFLOATMSG("TIME TO LOOP", uBit.systemTime() - audioRecvTime);
     }
-    fiber_sleep(20);
+    // fiber_sleep(20);
     PRINTFLOATMSG("GOING TO SEND", uBit.systemTime());
     uBit.display.setBrightness(255);
     // playTone(363, 1000, 10);
     radioPulse = false;
-    send();
+    distanceCalculation();
 }
 
 void test()
@@ -100,6 +113,7 @@ static void radioReceive(MicroBitEvent)
 {
     if (radioPulse)
     {
+        radioRecvTime = uBit.systemTime();
         return;
     }
     radioPulse = true;

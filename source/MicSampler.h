@@ -16,8 +16,8 @@ public:
     void stop() { this->active = false; }
     ManagedBuffer getBuffer()
     {
-        return this->buffer;
         time = ubit->systemTime();
+        return this->buffer;
     }
     long getTime() { return this->time; }
 
