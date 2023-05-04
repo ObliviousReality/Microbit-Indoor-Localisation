@@ -70,17 +70,36 @@ bool FFT::processReal()
     // for (int i = 0; i < sampleNumber / 2; i++)
     // {
     //     PRINTFLOAT((MIC_SAMPLE_RATE / sampleNumber) * (i));
-    //
+    // }
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
-    float ind = 2700 / rate;
-    PRINTFLOATMSG("IND", ind);
-    DMESG("int IND: ", (int)ind);
+    int ind = 2700 / rate;
+    // PRINTFLOATMSG("IND", ind);
+    // DMESG("int IND: ", (int)ind);
     // PRINTFLOATMSG("FREQUENCY", freq);
-    PRINTFLOAT(freq);
+    PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
+    // PRINTFLOATMSG("FREQ==========================", freq);
+    // PRINTFLOAT((rate) * (ind));
+    // PRINTFLOAT(mag[ind]);
+    // PRINTCOMPLEX(FFTOutput[63].real(), FFTOutput[63].imag());
     if (freq > TRANSMIT_FREQUENCY - 100 && freq < TRANSMIT_FREQUENCY + 100)
     {
         DMESG("IN RANGE");
+        PRINTFLOATMSG("FREQUENCY", freq);
+        PRINTFLOAT(mag[ind]);
+        return true;
+    }
+    if (mag[ind] > 7500000)
+    {
+        DMESG("ABOVE LEVEL CAP");
+        return true;
+    }
+    if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
+    {
+        DMESG("HALVE IN RANGE");
+        PRINTFLOATMSG("FREQUENCY", freq);
+        PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
+        PRINTFLOAT(mag[ind]);
         return true;
     }
     // double freqWithoutPlusOne = (MIC_SAMPLE_RATE / sampleNumber) * (index);

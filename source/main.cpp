@@ -43,6 +43,7 @@ void send()
 
 void recv()
 {
+    PRINTFLOATMSG("RECV START", uBit.systemTime());
     DMESG("RECV");
     uBit.display.setBrightness(0);
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
@@ -63,12 +64,11 @@ void recv()
     // {
     //     f->addSample(data[i]);
     // }
-    DMESG("LOOP START");
     long time = uBit.systemTime();
+    PRINTFLOATMSG("LOOP START", time);
     while (true)
     {
         // DMESG("LOOP");
-        fiber_sleep(20);
         int lev = sampler->getMax();
         if (lev > 1)
         {
@@ -92,24 +92,25 @@ void recv()
         // f->DFT();
         // DMESG("DFT DONE!");
         bool result = f->processReal();
-        if (result)
+        if (result && radioRecvTime)
         {
             DMESG("FREQUENCY DETECTED");
             timeoutTriggered = true;
-            uBit.radio.datagram.send("thanks it worked");
+            // uBit.radio.datagram.send("thanks it worked");
             PRINTFLOATMSG("TIME DIFFERENCE", audioRecvTime - radioRecvTime);
         }
         // f->processComplex();
         // DMESG("FFT DONE!");
         // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
-        if (uBit.systemTime() - time >= RECVTIMEOUT || timeoutTriggered)
+        if (timeoutTriggered)
         {
-            DMESG("TIMEOUT");
+            DMESG("END");
             sampler->stop();
             break;
         }
+        fiber_sleep(20);
     }
-    DMESG("GOING TO SEND");
+    PRINTFLOATMSG("GOING TO SEND", uBit.systemTime());
     uBit.display.setBrightness(255);
     uBit.radio.enable();
     send();
@@ -120,41 +121,6 @@ void test()
     DMESG("TEST");
     fiber_sleep(20);
     FFT *f = new FFT();
-
-    double data[] = {
-        -8.0,   -9.0,   -9.0,   -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,  -8.0,
-        -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -8.0,  -8.0,
-        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -9.0,   -8.0,   -9.0,   -8.0,  -8.0,
-        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -8.0,   -8.0,   -9.0,   -8.0,  -9.0,
-        -8.0,   -8.0,   -9.0,   -8.0,   -7.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,  -9.0,
-        -8.0,   -9.0,   -9.0,   -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,  -8.0,
-        -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -8.0,  -8.0,
-        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -9.0,   -9.0,   -8.0,   -9.0,   -8.0,  -8.0,
-        -9.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -8.0,   -8.0,   -9.0,   -8.0,  -9.0,
-        -8.0,   -8.0,   -9.0,   -8.0,   -7.0,   -8.0,   -8.0,   -8.0,   -8.0,   -8.0,  -9.0,
-        -8.0,   -8.0,   -9.0,   -8.0,   -7.0,   -8.0,   -7.0,   -9.0,   -8.0,   -7.0,  -8.0,
-        -7.0,   -7.0,   -8.0,   -7.0,   -7.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,  -8.0,
-        -8.0,   -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -7.0,   -7.0,   -8.0,   -7.0,  -8.0,
-        -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -7.0,   -9.0,   -8.0,   -8.0,   -8.0,  -7.0,
-        -8.0,   -8.0,   -8.0,   -8.0,   -7.0,   -8.0,   -7.0,   -7.0,   -7.0,   -8.0,  -8.0,
-        -8.0,   -8.0,   -7.0,   -7.0,   -8.0,   -7.0,   -7.0,   -7.0,   -7.0,   -7.0,  -7.0,
-        -7.0,   -7.0,   -7.0,   -7.0,   -7.0,   -6.0,   -7.0,   64.0,   0.0,    0.0,   0.0,
-        0.0,    32.0,   5.0,    0.0,    0.0,    0.0,    0.0,    32.0,   0.0,    0.0,   0.0,
-        34.0,   9.0,    0.0,    0.0,    0.0,    0.0,    32.0,   0.0,    0.0,    0.0,   34.0,
-        0.0,    0.0,    0.0,    34.0,   0.0,    0.0,    0.0,    34.0,   17.0,   0.0,   0.0,
-        0.0,    0.0,    32.0,   0.0,    0.0,    0.0,    34.0,   0.0,    0.0,    0.0,   34.0,
-        0.0,    0.0,    0.0,    34.0,   0.0,    0.0,    0.0,    32.0,   0.0,    0.0,   0.0,
-        32.0,   0.0,    0.0,    0.0,    32.0,   0.0,    0.0,    0.0,    32.0,   30.0,  0.0,
-        -108.0, -108.0, -93.0,  -105.0, -101.0, -94.0,  -98.0,  -100.0, -89.0,  -96.0, -100.0,
-        -104.0, -97.0,  -102.0, -104.0, -85.0,  -94.0,  -104.0, -104.0, -97.0,  -90.0, -98.0,
-        -96.0,  -103.0, -101.0, -106.0, -100.0, -97.0,  -104.0, -93.0,  -103.0, -98.0, -106.0,
-        -102.0, -97.0,  -99.0,  -89.0,  -94.0,  -106.0, -98.0,  -104.0, -91.0,  -98.0, -98.0,
-        -104.0, -97.0,  -104.0, -101.0, -96.0,  -99.0,  -96.0,  -106.0, -107.0, -88.0, -101.0,
-        -102.0, -94.0,  -104.0};
-    for (int i = 0; i < 128; i++)
-    {
-        f->addSample(data[i]);
-    }
     long st = uBit.systemTime();
     // f->DFT();
     long et = uBit.systemTime();
@@ -184,8 +150,8 @@ static void radioReceive(MicroBitEvent)
     PacketBuffer b = uBit.radio.datagram.recv();
     DMESG("MESSAGE FROM: %s", b.getBytes());
     radioRecvTime = uBit.systemTime();
-    uBit.radio.disable();
-    recv();
+    // uBit.radio.disable();
+    // recv();
 }
 
 void bee()
@@ -200,6 +166,7 @@ void bee()
 int main()
 {
     uBit.init();
+    uBit.audio.mic->requestSampleRate(6400);
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {
@@ -211,7 +178,6 @@ int main()
     uBit.radio.setGroup(5);
     uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
-    // uBit.audio.mic->requestSampleRate(6400);
     PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
     while (true)
     {
