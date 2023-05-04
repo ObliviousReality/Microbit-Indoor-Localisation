@@ -2,9 +2,6 @@
 #include "samples/Tests.h"
 #include "MicSampler.h"
 #include "fft.h"
-#include <cstring>
-
-#define RECVTIMEOUT 1000
 
 static void radioReceive(MicroBitEvent);
 void recv();
@@ -17,6 +14,9 @@ int promptCounter = 0;
 const int MAXPROMPTS = 8;
 
 char name[7];
+
+long radioRecvTime = 0;
+long audioRecvTime = 0;
 
 void playTone(int f, int hiT, int loT = -1)
 {
@@ -37,7 +37,7 @@ void send()
     {
         uBit.radio.datagram.send(name);
         // fiber_sleep(20);
-        playTone(8000, 20, 1000);
+        playTone(TRANSMIT_FREQUENCY, 20, 1000);
     }
 }
 
@@ -47,6 +47,7 @@ void recv()
     uBit.display.setBrightness(0);
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
     FFT *f = new FFT();
+    bool timeoutTriggered = false;
     for (int y = 0; y < 5; y++)
     {
         for (int x = 0; x < 5; x++)
@@ -78,10 +79,11 @@ void recv()
         {
             uBit.display.setBrightness(0);
         }
+        audioRecvTime = uBit.systemTime();
         ManagedBuffer buf = sampler->getBuffer();
         int16_t *data = (int16_t *)&buf[0];
         f->clearSamples();
-        for (int i = 0; i < 128; i++)
+        for (int i = 0; i < WINDOW_SIZE; i++)
         {
             f->addSample((int8_t)*data);
             data++;
@@ -89,11 +91,18 @@ void recv()
         // DMESG("LENGTH: %d", f->getSampleNumber());
         // f->DFT();
         // DMESG("DFT DONE!");
-        f->processReal();
+        bool result = f->processReal();
+        if (result)
+        {
+            DMESG("FREQUENCY DETECTED");
+            timeoutTriggered = true;
+            uBit.radio.datagram.send("thanks it worked");
+            PRINTFLOATMSG("TIME DIFFERENCE", audioRecvTime - radioRecvTime);
+        }
         // f->processComplex();
         // DMESG("FFT DONE!");
         // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
-        if (uBit.systemTime() - time >= RECVTIMEOUT)
+        if (uBit.systemTime() - time >= RECVTIMEOUT || timeoutTriggered)
         {
             DMESG("TIMEOUT");
             sampler->stop();
@@ -170,18 +179,11 @@ void test()
     }
 }
 
-std::string uint64_to_string(uint64_t value)
-{
-    std::ostringstream os;
-    os << value;
-    return os.str();
-}
-
 static void radioReceive(MicroBitEvent)
 {
-    uBit.display.print("J");
     PacketBuffer b = uBit.radio.datagram.recv();
     DMESG("MESSAGE FROM: %s", b.getBytes());
+    radioRecvTime = uBit.systemTime();
     uBit.radio.disable();
     recv();
 }
@@ -198,7 +200,6 @@ void bee()
 int main()
 {
     uBit.init();
-    DMESG("INIT!");
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {
@@ -210,7 +211,7 @@ int main()
     uBit.radio.setGroup(5);
     uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
-
+    // uBit.audio.mic->requestSampleRate(6400);
     PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
     while (true)
     {
@@ -222,13 +223,11 @@ int main()
         // }
         if (uBit.buttonA.isPressed())
         {
-            DMESG("A");
             send();
             break;
         }
         else if (uBit.buttonB.isPressed())
         {
-            DMESG("B");
             recv();
             break;
         }

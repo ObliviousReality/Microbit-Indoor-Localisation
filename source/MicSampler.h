@@ -1,10 +1,9 @@
 #include "MicroBit.h"
 #include "DataStream.h"
+#include "global.h"
 
 #ifndef MIC_SAMPLER_H
 #define MIC_SAMPLER_H
-
-#define WINDOW_SIZE 128
 
 class MicSampler : public DataSink
 {

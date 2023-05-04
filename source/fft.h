@@ -8,14 +8,12 @@
 #ifndef FFT_H
 #define FFT_H
 
-#define MIC_SAMPLE_RATE 11111 // apparently
-
 class FFT
 {
 public:
     FFT();
     void processComplex();
-    void processReal();
+    bool processReal();
     void DFT()
     {
         int len = sampleNumber;
@@ -41,16 +39,17 @@ public:
     }
     void addSample(float s)
     {
-        this->DFTInput.push_back(s);
+        // this->DFTInput.push_back(s);
+        this->FFTInput[sampleNumber++] = s;
         // PRINTFLOATMSG("ADDING", s);
         // PRINTFLOAT(s);
-        this->sampleNumber++;
+        // this->sampleNumber++;
     }
     void clearSamples()
     {
         this->DFTInput.clear();
         this->DFTOutput.clear();
-        this->FFTOutput.clear();
+        // this->FFTOutput.clear();
         this->sampleNumber = 0;
     }
     std::vector<std::complex<double>> *getDFTOutput() { return &DFTOutput; }
@@ -61,10 +60,13 @@ private:
     int sampleNumber = 0;
 
     std::vector<double> DFTInput;
+    kiss_fft_scalar FFTInput[WINDOW_SIZE];
     // std::vector<double> real;
     // std::vector<double> imaginary;
     std::vector<std::complex<double>> DFTOutput;
-    std::vector<std::complex<double>> FFTOutput;
+    // std::vector<std::complex<double>> FFTOutput;
+    
+    std::complex<double> FFTOutput[WINDOW_SIZE];
     kiss_fftr_cfg cfgr;
     kiss_fft_cfg cfg;
 };

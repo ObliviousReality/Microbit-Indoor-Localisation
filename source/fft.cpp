@@ -18,44 +18,35 @@ void FFT::processComplex()
     kiss_fft(cfg, in, out);
 
     // for (int i = 0; i < SampleNumber; i++)
-    //     PRINTFIVEFLOAT(i, in[i].r, in[i].i, out[i].r, out[i].i);
+    // PRINTFIVEFLOAT(i, in[i].r, in[i].i, out[i].r, out[i].i);
     free(cfg);
 }
 
-void FFT::processReal()
+bool FFT::processReal()
 {
     // DMESG("SAMPLE NUMBER: %d", sampleNumber);
     cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
-    kiss_fft_scalar inr[sampleNumber];
     kiss_fft_cpx out[sampleNumber];
-    for (int i = 0; i < sampleNumber; i++)
-    {
-        inr[i] = DFTInput.at(i);
-    }
-
-    kiss_fftr(cfgr, inr, out);
+    kiss_fftr(cfgr, this->FFTInput, out);
     // DMESG("PROCESSED");
 
     for (int i = 0; i < sampleNumber; i++)
-        FFTOutput.push_back(std::complex<double>(out[i].r, out[i].i));
-    //     PRINTFOURFLOAT(i, inr[i], out[i].r, out[i].i);
+    {
+        FFTOutput[i] = std::complex<double>(out[i].r, out[i].i);
+        // FFTOutput.push_back(std::complex<double>(out[i].r, out[i].i));
+    }
+    // PRINTFOURFLOAT(i, inr[i], out[i].r, out[i].i);
 
     free(cfgr);
     double mag[sampleNumber / 2];
     // DMESG("START OF NEW LOOP");
     for (int i = 0; i < sampleNumber / 2; i++)
     {
-        std::complex<double> val = this->FFTOutput.at(i);
+        std::complex<double> val = this->FFTOutput[i];
         mag[i] = (val.real() * val.real()) + (val.imag() * val.imag());
         // PRINTFLOAT(mag[i]);
     }
     // DMESG("END OF NEW LOOP");
-    // DMESG("MAG:");
-    // for (int i = 0; i < sampleNumber / 2; i++)
-    // {
-    //     PRINTFLOAT(mag[i]);
-    // }
-    // DMESG("END OF MAG");
     double max = 0;
     int index = 0;
     for (int i = 1; i < sampleNumber / 2; i++)
@@ -66,10 +57,33 @@ void FFT::processReal()
             index = i;
         }
     }
-    PRINTFLOATMSG("MAX", max);
-    DMESG("INDEX: %d", index);
-    PRINTCOMPLEX(FFTOutput.at(index).real(), FFTOutput.at(index).imag());
+    if (max == 0)
+    {
+        DMESG("NO DATA");
+        return false;
+    }
+    // PRINTFLOATMSG("MAX", max);
+    // DMESG("INDEX: %d", index);
+    // PRINTCOMPLEX(FFTOutput[index].real(), FFTOutput[index].imag());
 
-    double freq = (MIC_SAMPLE_RATE / sampleNumber) * (index + 1);
-    PRINTFLOATMSG("FREQUENCY", freq);
+    // DMESG("PRINTING ALL FREQS:");
+    // for (int i = 0; i < sampleNumber / 2; i++)
+    // {
+    //     PRINTFLOAT((MIC_SAMPLE_RATE / sampleNumber) * (i));
+    //
+    float rate = (MIC_SAMPLE_RATE / sampleNumber);
+    double freq = (rate) * (index + 1);
+    float ind = 2700 / rate;
+    PRINTFLOATMSG("IND", ind);
+    DMESG("int IND: ", (int)ind);
+    // PRINTFLOATMSG("FREQUENCY", freq);
+    PRINTFLOAT(freq);
+    if (freq > TRANSMIT_FREQUENCY - 100 && freq < TRANSMIT_FREQUENCY + 100)
+    {
+        DMESG("IN RANGE");
+        return true;
+    }
+    // double freqWithoutPlusOne = (MIC_SAMPLE_RATE / sampleNumber) * (index);
+    // PRINTFLOATMSG("FREQUENCY2", freqWithoutPlusOne);
+    return false;
 }
