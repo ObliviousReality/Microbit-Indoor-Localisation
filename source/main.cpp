@@ -18,6 +18,9 @@ char name[7];
 long radioRecvTime = 0;
 long audioRecvTime = 0;
 
+MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
+FFT *f = new FFT();
+
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
@@ -43,42 +46,11 @@ void send()
 
 void recv()
 {
-    PRINTFLOATMSG("RECV START", uBit.systemTime());
-    DMESG("RECV");
-    uBit.display.setBrightness(0);
-    MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
-    FFT *f = new FFT();
     bool timeoutTriggered = false;
-    for (int y = 0; y < 5; y++)
-    {
-        for (int x = 0; x < 5; x++)
-        {
-            uBit.display.image.setPixelValue(x, y, 255);
-        }
-    }
-
-    sampler->start();
-
-    // double data[] = {-69, -65, -72, -67, -65};
-    // for (int i = 0; i < 5; i++)
-    // {
-    //     f->addSample(data[i]);
-    // }
     long time = uBit.systemTime();
     PRINTFLOATMSG("LOOP START", time);
     while (true)
     {
-        // DMESG("LOOP");
-        int lev = sampler->getMax();
-        if (lev > 1)
-        {
-            uBit.display.setBrightness(lev);
-            // DMESG("CUR LEVEL: %d", lev);
-        }
-        else
-        {
-            uBit.display.setBrightness(0);
-        }
         audioRecvTime = uBit.systemTime();
         ManagedBuffer buf = sampler->getBuffer();
         int16_t *data = (int16_t *)&buf[0];
@@ -88,9 +60,6 @@ void recv()
             f->addSample((int8_t)*data);
             data++;
         }
-        // DMESG("LENGTH: %d", f->getSampleNumber());
-        // f->DFT();
-        // DMESG("DFT DONE!");
         bool result = f->processReal();
         if (result && radioRecvTime)
         {
@@ -99,8 +68,6 @@ void recv()
             // uBit.radio.datagram.send("thanks it worked");
             PRINTFLOATMSG("TIME DIFFERENCE", audioRecvTime - radioRecvTime);
         }
-        // f->processComplex();
-        // DMESG("FFT DONE!");
         // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
         if (timeoutTriggered)
         {
@@ -108,8 +75,9 @@ void recv()
             sampler->stop();
             break;
         }
-        fiber_sleep(20);
+        fiber_sleep(1);
     }
+    fiber_sleep(20);
     PRINTFLOATMSG("GOING TO SEND", uBit.systemTime());
     uBit.display.setBrightness(255);
     uBit.radio.enable();
@@ -119,26 +87,6 @@ void recv()
 void test()
 {
     DMESG("TEST");
-    fiber_sleep(20);
-    FFT *f = new FFT();
-    long st = uBit.systemTime();
-    // f->DFT();
-    long et = uBit.systemTime();
-    // std::vector<std::complex<double>> *out = f->getDFTOutput();
-    // for (int i = 0; i < f->getSampleNumber(); i++)
-    // {
-    //     PRINTFOURFLOAT(i, data[i], out->at(i).real(), out->at(i).imag());
-    // }
-
-    DMESG("DFT DONE!");
-
-    DMESG("PROCESSING TIME: %d", (int)(et - st));
-    st = uBit.systemTime();
-    // f->processComplex();
-    f->processReal();
-    et = uBit.systemTime();
-    DMESG("FFT DONE!");
-    DMESG("PROCESSING TIME: %d", (int)(et - st));
     while (true)
     {
         fiber_sleep(200);
@@ -150,8 +98,7 @@ static void radioReceive(MicroBitEvent)
     PacketBuffer b = uBit.radio.datagram.recv();
     DMESG("MESSAGE FROM: %s", b.getBytes());
     radioRecvTime = uBit.systemTime();
-    // uBit.radio.disable();
-    // recv();
+    recv();
 }
 
 void bee()
@@ -166,7 +113,6 @@ void bee()
 int main()
 {
     uBit.init();
-    uBit.audio.mic->requestSampleRate(6400);
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {
@@ -179,6 +125,11 @@ int main()
     uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
     PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
+
+    PRINTFLOATMSG("RECV START", uBit.systemTime());
+
+    sampler->start();
+
     while (true)
     {
         // fiber_sleep(20);
@@ -197,11 +148,6 @@ int main()
             recv();
             break;
         }
-        // else if (uBit.logo.isPressed())
-        // {
-        //     test();
-        //     break;
-        // }
         uBit.sleep(500);
     }
 }
