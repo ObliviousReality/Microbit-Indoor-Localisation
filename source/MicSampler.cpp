@@ -1,9 +1,10 @@
 #include "MicSampler.h"
 
-MicSampler::MicSampler(DataSource &s) : source(s)
+MicSampler::MicSampler(DataSource &s, MicroBit *ubit) : source(s)
 {
     source.connect(*this);
     DMESG("SAMPLER ONLINE");
+    this->ubit = ubit;
 }
 
 MicSampler::~MicSampler()
@@ -17,7 +18,6 @@ int MicSampler::pullRequest()
     {
         return DEVICE_OK;
     }
-    ManagedBuffer b = source.pull();
-    buffer = b;
+    buffer = source.pull();
     return DEVICE_OK;
 }

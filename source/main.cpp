@@ -18,7 +18,9 @@ char name[7];
 long radioRecvTime = 0;
 long audioRecvTime = 0;
 
-MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel());
+bool radioPulse = false;
+
+MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel(), &uBit);
 FFT *f = new FFT();
 
 void playTone(int f, int hiT, int loT = -1)
@@ -66,7 +68,7 @@ void recv()
             DMESG("FREQUENCY DETECTED");
             timeoutTriggered = true;
             // uBit.radio.datagram.send("thanks it worked");
-            PRINTFLOATMSG("TIME DIFFERENCE", audioRecvTime - radioRecvTime);
+            PRINTFLOATMSG("TIME DIFFERENCE", sampler->getTime() - radioRecvTime);
         }
         // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
         if (timeoutTriggered)
@@ -80,7 +82,8 @@ void recv()
     fiber_sleep(20);
     PRINTFLOATMSG("GOING TO SEND", uBit.systemTime());
     uBit.display.setBrightness(255);
-    uBit.radio.enable();
+    // playTone(363, 1000, 10);
+    radioPulse = false;
     send();
 }
 
@@ -95,9 +98,14 @@ void test()
 
 static void radioReceive(MicroBitEvent)
 {
+    if (radioPulse)
+    {
+        return;
+    }
+    radioPulse = true;
+    radioRecvTime = uBit.systemTime();
     PacketBuffer b = uBit.radio.datagram.recv();
     DMESG("MESSAGE FROM: %s", b.getBytes());
-    radioRecvTime = uBit.systemTime();
     recv();
 }
 

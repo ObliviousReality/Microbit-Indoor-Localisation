@@ -8,17 +8,24 @@
 class MicSampler : public DataSink
 {
 public:
-    MicSampler(DataSource &s);
+    MicSampler(DataSource &s, MicroBit *ubit);
     ~MicSampler();
     virtual int pullRequest();
 
     void start() { this->active = true; }
     void stop() { this->active = false; }
-    ManagedBuffer getBuffer() { return this->buffer; }
+    ManagedBuffer getBuffer()
+    {
+        return this->buffer;
+        time = ubit->systemTime();
+    }
+    long getTime() { return this->time; }
 
 private:
+    MicroBit *ubit;
     DataSource &source;
     bool active = false;
+    long time = 0;
     ManagedBuffer buffer;
 };
 

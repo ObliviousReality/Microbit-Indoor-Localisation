@@ -1,6 +1,3 @@
-#include "MicroBit.h"
-#include <complex>
-#include <vector>
 #include "kiss/kiss_fftr.h"
 #include "global.h"
 
