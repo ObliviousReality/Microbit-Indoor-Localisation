@@ -1,6 +1,8 @@
 #include "MicroBit.h"
 #include "fft.h"
 
+#define MAG_THRESHOLD 20
+
 FFT::FFT() {}
 
 bool FFT::processReal()
@@ -34,7 +36,7 @@ bool FFT::processReal()
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
     int ind = 2700 / rate;
-    // PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
+    PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
     // if (freq > TRANSMIT_FREQUENCY - 100 && freq < TRANSMIT_FREQUENCY + 100)
     // {
     //     DMESG("IN RANGE");
@@ -45,7 +47,7 @@ bool FFT::processReal()
     if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
     {
         PRINTFLOATMSG("MAG:", mag[ind]);
-        if (mag[ind] < 10)
+        if (mag[ind] < MAG_THRESHOLD)
         {
             DMESG("MAG TOO LOW");
             return false;

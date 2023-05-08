@@ -1,7 +1,6 @@
 #include "MicroBit.h"
 #include "samples/Tests.h"
 #include "MicSampler.h"
-#include "fft.h"
 #include "global.h"
 
 static void radioReceive(MicroBitEvent);
@@ -20,9 +19,6 @@ long radioRecvTime = 0;
 long audioRecvTime = 0;
 
 bool radioPulse = false;
-
-MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel(), &uBit);
-FFT *f = new FFT();
 
 void playTone(int f, int hiT, int loT = -1)
 {
@@ -47,57 +43,52 @@ void send()
     }
 }
 
-void distanceCalculation()
+void distanceCalculation(long audioTime)
 {
     uBit.display.print("C");
-    double time = sampler->getTime() - radioRecvTime;
+    double time = audioTime - radioRecvTime;
     double distance = SPEEDOFSOUND * (time / 1000.0f);
     PRINTFLOATMSG("DISTANCE CALCULATED", distance);
+    fiber_sleep(1);
     send();
 }
 
 void recv()
 {
+    MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel(), &uBit);
     bool timeoutTriggered = false;
     uBit.display.print("R");
     long time = uBit.systemTime();
     PRINTFLOATMSG("LOOP START", time);
     radioRecvTime = uBit.systemTime();
+    sampler->start();
     while (true)
     {
-        audioRecvTime = uBit.systemTime();
-        ManagedBuffer buf = sampler->getBuffer();
-        int16_t *data = (int16_t *)&buf[0];
-        f->clearSamples();
-        for (int i = 0; i < WINDOW_SIZE; i++)
-        {
-            f->addSample((int8_t)*data);
-            data++;
-        }
-        bool result = f->processReal();
-        if (result && radioRecvTime)
+        // audioRecvTime = uBit.systemTime();
+        // ManagedBuffer buf = sampler->getBuffer();
+        // PRINTFLOATMSG("BUFFER SIZE", buf.length());
+
+        if (sampler->foundResult() && radioPulse)
         {
             DMESG("FREQUENCY DETECTED");
             timeoutTriggered = true;
-            // uBit.radio.datagram.send("thanks it worked");
             PRINTFLOATMSG("TIME DIFFERENCE", sampler->getTime() - radioRecvTime);
         }
         // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
-        // fiber_sleep(1);
         if (timeoutTriggered)
         {
+            fiber_sleep(1);
             DMESG("END");
-            sampler->stop();
             break;
         }
-        PRINTFLOATMSG("TIME TO LOOP", uBit.systemTime() - audioRecvTime);
+        // PRINTFLOATMSG("TIME TO LOOP", uBit.systemTime() - audioRecvTime);
     }
     // fiber_sleep(20);
     PRINTFLOATMSG("GOING TO SEND", uBit.systemTime());
     uBit.display.setBrightness(255);
     // playTone(363, 1000, 10);
     radioPulse = false;
-    distanceCalculation();
+    distanceCalculation(sampler->getTime());
 }
 
 void test()
@@ -111,13 +102,12 @@ void test()
 
 static void radioReceive(MicroBitEvent)
 {
+    radioRecvTime = uBit.systemTime();
     if (radioPulse)
     {
-        radioRecvTime = uBit.systemTime();
         return;
     }
     radioPulse = true;
-    radioRecvTime = uBit.systemTime();
     PacketBuffer b = uBit.radio.datagram.recv();
     DMESG("MESSAGE FROM: %s", b.getBytes());
     recv();
@@ -150,8 +140,19 @@ int main()
 
     PRINTFLOATMSG("RECV START", uBit.systemTime());
 
-    sampler->start();
+    // sampler->start();
 
+    // if (uBit.audio.mic->isEnabled())
+    // {
+    //     DMESG("MIC ENABLED");
+    // }
+    // else
+    // {
+    //     DMESG("MIC NOT ENABLED");
+    //     fiber_sleep(10);
+    //     uBit.reset();
+    // }
+    // uBit.audio.mic->enable();
     while (true)
     {
         // fiber_sleep(20);

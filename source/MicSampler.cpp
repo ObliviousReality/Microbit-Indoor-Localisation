@@ -19,5 +19,21 @@ int MicSampler::pullRequest()
         return DEVICE_OK;
     }
     buffer = source.pull();
+    time = ubit->systemTime();
+    int16_t *data = (int16_t *)&buffer[0];
+    for (int around = 0; around < 1; around++)
+    {
+        f->clearSamples();
+        for (int i = 0; i < WINDOW_SIZE; i++)
+        {
+            f->addSample((int8_t)*data);
+            data++;
+        }
+        bool result = f->processReal();
+        if (result)
+        {
+            this->stop();
+        }
+    }
     return DEVICE_OK;
 }
