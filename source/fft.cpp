@@ -7,6 +7,7 @@ FFT::FFT() {}
 
 bool FFT::processReal()
 {
+    DMESG("FFT SAMPLE SIZE: %d", sampleNumber);
     cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
     kiss_fft_cpx out[sampleNumber];
     kiss_fftr(cfgr, this->FFTInput, out);
@@ -20,8 +21,10 @@ bool FFT::processReal()
     }
     double max = 0;
     int index = 0;
+    // int total = 0;
     for (int i = 1; i < sampleNumber / 2; i++)
     {
+        // total = total + mag[i];
         if (mag[i] > max)
         {
             max = mag[i];
@@ -33,10 +36,11 @@ bool FFT::processReal()
         DMESG("NO DATA");
         return false;
     }
+    DMESG("BIN SIZE: %d", (int)(sampleNumber / 2));
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
     int ind = 2700 / rate;
-    PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
+    // PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
     // if (freq > TRANSMIT_FREQUENCY - 100 && freq < TRANSMIT_FREQUENCY + 100)
     // {
     //     DMESG("IN RANGE");
@@ -52,8 +56,7 @@ bool FFT::processReal()
             DMESG("MAG TOO LOW");
             return false;
         }
-        DMESG("HALVE IN RANGE");
-        PRINTFLOATMSG("FREQUENCY", freq);
+        DMESG("IN RANGE");
         PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
         return true;
     }

@@ -23,19 +23,26 @@ public:
         this->active = false;
         this->outcome = true;
     }
+
+    void goAgain() { this->outcome = false; }
     ManagedBuffer getBuffer() { return this->buffer; }
     long getTime() { return this->time; }
 
     bool foundResult() { return this->outcome; }
+    clock_t aRecv = 0;
 
 private:
     MicroBit *ubit;
     DataSource &source;
     bool active = false;
     long time = 0;
+
     ManagedBuffer buffer;
     FFT *f = new FFT();
     bool outcome = false;
+
+    // int timeTotal = 0;
+    // int timeCounter = 0;
 };
 
 #endif
