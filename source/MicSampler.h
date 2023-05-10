@@ -32,6 +32,9 @@ public:
     clock_t aRecv = 0;
 
 private:
+    void addSamples(int start, int end);
+    void testRanges();
+
     MicroBit *ubit;
     DataSource &source;
     bool active = false;
@@ -40,6 +43,8 @@ private:
     ManagedBuffer buffer;
     FFT *f = new FFT();
     bool outcome = false;
+
+    int lowerBound, upperBound;
 
     // int timeTotal = 0;
     // int timeCounter = 0;
