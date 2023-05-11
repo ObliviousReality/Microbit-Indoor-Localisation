@@ -48,9 +48,10 @@ bool FFT::processReal()
     //     PRINTFLOAT(mag[ind]);
     //     return true;
     // }
+    PRINTFLOATMSG("MAG", mag[ind]);
+    this->magnitude = mag[ind];
     if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
     {
-        PRINTFLOATMSG("MAG:", mag[ind]);
         if (mag[ind] < MAG_THRESHOLD)
         {
             DMESG("MAG TOO LOW");

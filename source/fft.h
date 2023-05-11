@@ -12,6 +12,7 @@ public:
     void addSample(float s) { this->FFTInput[sampleNumber++] = s; }
     void clearSamples() { this->sampleNumber = 0; }
     int getSampleNumber() { return this->sampleNumber; }
+    int getMag() { return this->magnitude; }
 
 private:
     int sampleNumber = 0;
@@ -19,6 +20,8 @@ private:
     kiss_fft_scalar FFTInput[WINDOW_SIZE];
 
     kiss_fftr_cfg cfgr;
+
+    int magnitude = 0;
 };
 
 #endif

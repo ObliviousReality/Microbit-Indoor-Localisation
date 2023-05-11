@@ -33,7 +33,8 @@ public:
 
 private:
     void addSamples(int start, int end);
-    void testRanges();
+    void binaryChop();
+    void slidingWindow();
 
     MicroBit *ubit;
     DataSource &source;
