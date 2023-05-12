@@ -6,12 +6,29 @@
 #ifndef MIC_SAMPLER_H
 #define MIC_SAMPLER_H
 
+struct AudioBuffer
+{
+    AudioBuffer(ManagedBuffer b, long t)
+    {
+        this->buffer = b;
+        this->time = t;
+    }
+    ManagedBuffer buffer;
+    long time;
+    int mag = 0;
+    bool found = false;
+    int *subMags = (int *)malloc(sizeof(int) * SPLIT_NUMBER);
+    bool *subFounds = (bool *)malloc(sizeof(bool) * SPLIT_NUMBER);
+};
+
 class MicSampler : public DataSink
 {
 public:
     MicSampler(DataSource &s, MicroBit *ubit);
     ~MicSampler();
     virtual int pullRequest();
+
+    void processResult();
 
     void start()
     {
@@ -32,7 +49,7 @@ public:
     clock_t aRecv = 0;
 
 private:
-    void addSamples(int start, int end);
+    void addSamples(int start, int end, ManagedBuffer b);
     void binaryChop();
     void slidingWindow();
 
@@ -47,8 +64,14 @@ private:
 
     int lowerBound, upperBound;
 
-    // int timeTotal = 0;
-    // int timeCounter = 0;
+    int bufCounter = 0;
+    AudioBuffer **buffers = (AudioBuffer **)malloc(sizeof(AudioBuffer *) * BUFFER_BUFFER);
+    // ManagedBuffer **buffers;
+    // long *times;
+    // bool *found;
+    // int *mags;
+    // bool **subFound;
+    // int **subMags;
 };
 
 #endif

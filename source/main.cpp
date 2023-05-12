@@ -83,32 +83,38 @@ void recv()
         // ManagedBuffer buf = sampler->getBuffer();
         // PRINTFLOATMSG("BUFFER SIZE", buf.length());
 
-        if (sampler->foundResult() && radioPulse)
+        // if (sampler->foundResult() && radioPulse)
+        // {
+        //     fiber_sleep(1);
+        //     DMESG("FREQUENCY DETECTED");
+        //     fiber_sleep(1);
+        //     // PRINTFLOATMSG("TIME DIFFERENCE", sampler->getTime() - radioRecvTime);
+        //     fiber_sleep(1);
+        //     DMESG("END");
+        //     fiber_sleep(1);
+        //     break;
+        // }
+        // else if (sampler->foundResult() && !radioPulse)
+        // {
+        //     DMESG("NO RADIO PULSE");
+        //     fiber_sleep(1);
+        //     sampler->goAgain();
+        // }
+        DMESG("LOOP");
+        if (sampler->foundResult())
         {
-            fiber_sleep(1);
-            DMESG("FREQUENCY DETECTED");
-            fiber_sleep(1);
-            // PRINTFLOATMSG("TIME DIFFERENCE", sampler->getTime() - radioRecvTime);
-            fiber_sleep(1);
-            DMESG("END");
-            fiber_sleep(1);
-            break;
+            DMESG("SAMPLER HAS FINISHED");
+            sampler->processResult();
         }
-        else if (sampler->foundResult() && !radioPulse)
-        {
-            DMESG("NO RADIO PULSE");
-            fiber_sleep(1);
-            sampler->goAgain();
-        }
-        fiber_sleep(1);
-        if (uBit.systemTime() - time > 5000)
-        {
-            sampler->stop();
-            DMESG("TIMEOUT");
-            fiber_sleep(1);
-            timedOut = true;
-            break;
-        }
+        fiber_sleep(10);
+        // if (uBit.systemTime() - time > 5000)
+        // {
+        //     sampler->stop();
+        //     DMESG("TIMEOUT");
+        //     fiber_sleep(1);
+        //     timedOut = true;
+        //     break;
+        // }
         // DMESG("TIME: %d", (int)(uBit.systemTime() - time));
         // PRINTFLOATMSG("TIME TO LOOP", uBit.systemTime() - audioRecvTime);
     }
