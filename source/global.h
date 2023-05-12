@@ -8,7 +8,7 @@
 
 #define PRINTCOMPLEX(r, i) DMESG("%d.%d + %d.%di", RAWFLOAT(r), RAWFLOAT(i))
 
-#define WINDOW_SIZE 128
+#define WINDOW_SIZE 256
 
 #define TRANSMIT_FREQUENCY 2700
 

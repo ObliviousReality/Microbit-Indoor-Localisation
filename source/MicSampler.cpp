@@ -63,9 +63,9 @@ void MicSampler::slidingWindow()
 {
     DMESG("SLIDING WINDOW");
     fiber_sleep(1);
-    int divisor = 16;
-    int frameSize = (WINDOW_SIZE / divisor);
-    int *magnitudes = (int *)malloc(sizeof(int) * divisor);
+    int numberOfSplits = 16;
+    int frameSize = (WINDOW_SIZE / numberOfSplits);
+    int *magnitudes = (int *)malloc(sizeof(int) * numberOfSplits);
     int mCount = 0;
     DMESG("SW LOOP START");
     fiber_sleep(1);
@@ -82,7 +82,7 @@ void MicSampler::slidingWindow()
         // magnitudes[mCount++] = 0;
     }
 
-    for (int i = 0; i < divisor; i++)
+    for (int i = 0; i < numberOfSplits; i++)
     {
         DMESG("MAGNITUDE AT POS %d: %d", i, magnitudes[i]);
     }
