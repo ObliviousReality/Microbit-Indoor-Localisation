@@ -21,17 +21,32 @@ MicSampler::~MicSampler()
     this->source.disconnect();
 }
 
+bool MicSampler::processFFT()
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+
+    bool result = f->processReal();
+
+    uint32_t cycleCount = DWT->CYCCNT;
+    DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
+    // DMESG("cycle count: %d", cycleCount);
+    return result;
+}
+
 void MicSampler::addSamples(int start, int end, ManagedBuffer b)
 {
     f->clearSamples();
     int16_t *data = (int16_t *)&b[0];
     data = data + start;
-    DMESG("ADDING SAMPLE 1: %d", (int8_t)*data);
+    // DMESG("ADDING SAMPLE 1: %d", (int8_t)*data);
     for (int i = start; i < end; i++)
     {
         this->f->addSample((int8_t)*data++);
     }
-    DMESG("ADDING SAMPLE N: %d", (int8_t)*data);
+    // DMESG("ADDING SAMPLE N: %d", (int8_t)*data);
 }
 
 void MicSampler::binaryChop()
@@ -114,7 +129,7 @@ int MicSampler::pullRequest()
     time = ubit->systemTime() - 23; // Sample length is 23ms, so sample began 23ms earlier than PR.
     buffer = source.pull();
     aRecv = clock();
-    buffers[bufCounter] = new AudioBuffer(buffer, time);
+    buffers[bufCounter] = new AudioBuffer(bufCounter, buffer, time);
     bufCounter++;
     /*this->addSamples(0, WINDOW_SIZE);
     long bTime = ubit->systemTime();
@@ -163,10 +178,33 @@ int MicSampler::pullRequest()
     return DEVICE_OK;
 }
 
-void MicSampler::processResult()
+bool MicSampler::processResult()
 {
+    bool anyFound = false;
     for (int i = 0; i < BUFFER_BUFFER; i++)
     {
         this->addSamples(0, WINDOW_SIZE, buffers[i]->buffer);
+        bool r = processFFT();
+        buffers[i]->found = r;
+        buffers[i]->mag = f->getMag();
+        if (r)
+        {
+            anyFound = true;
+        }
+        PRINTBUFFER(buffers[i]);
     }
+
+    // for (int i = 0; i < BUFFER_BUFFER; i++)
+    // {
+    //     PRINTBUFFER(buffers[i]);
+    // }
+
+    if (!anyFound)
+    {
+        DMESG("NOT FOUND FREQUENCY");
+        fiber_sleep(10);
+        return false;
+    }
+
+    return true;
 }

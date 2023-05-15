@@ -7,7 +7,7 @@ FFT::FFT() {}
 
 bool FFT::processReal()
 {
-    DMESG("FFT SAMPLE SIZE: %d", sampleNumber);
+    // DMESG("FFT SAMPLE SIZE: %d", sampleNumber);
     cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
     kiss_fft_cpx out[sampleNumber];
     kiss_fftr(cfgr, this->FFTInput, out);
@@ -36,7 +36,7 @@ bool FFT::processReal()
         DMESG("NO DATA");
         return false;
     }
-    DMESG("BIN SIZE: %d", (int)(sampleNumber / 2));
+    // DMESG("BIN SIZE: %d", (int)(sampleNumber / 2));
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
     int ind = 2700 / rate;
@@ -48,17 +48,17 @@ bool FFT::processReal()
     //     PRINTFLOAT(mag[ind]);
     //     return true;
     // }
-    PRINTFLOATMSG("MAG", mag[ind]);
+    // PRINTFLOATMSG("MAG", mag[ind]);
     this->magnitude = mag[ind];
     if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
     {
         if (mag[ind] < MAG_THRESHOLD)
         {
-            DMESG("MAG TOO LOW");
+            // DMESG("MAG TOO LOW");
             return false;
         }
-        DMESG("IN RANGE");
-        PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
+        // DMESG("IN RANGE");
+        // PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
         return true;
     }
     return false;

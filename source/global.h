@@ -11,7 +11,10 @@
 
 #define PRINTCOMPLEX(r, i) DMESG("%d.%d + %d.%di", RAWFLOAT(r), RAWFLOAT(i))
 
-#define WINDOW_SIZE 256
+#define PRINTBUFFER(b)                                                                             \
+    DMESG("BUFFER %d: M: %d\tF: %s T: %d", b->index, b->mag, (b->found ? "true " : "false"), b->time)
+
+#define WINDOW_SIZE 128
 
 #define TRANSMIT_FREQUENCY 2700
 
@@ -21,6 +24,6 @@
 
 #define SPEEDOFSOUND 343 // ms
 
-#define BUFFER_BUFFER 10
+#define BUFFER_BUFFER 5
 
-#define SPLIT_NUMBER 16
+#define SPLIT_NUMBER 8

@@ -77,6 +77,7 @@ void recv()
     radioRecvTime = uBit.systemTime();
     sampler->start();
     bool timedOut = false;
+    bool processedAlready = false;
     while (true)
     {
         // audioRecvTime = uBit.systemTime();
@@ -100,13 +101,22 @@ void recv()
         //     fiber_sleep(1);
         //     sampler->goAgain();
         // }
-        DMESG("LOOP");
-        if (sampler->foundResult())
+        // DMESG("LOOP");
+        if (sampler->foundResult() && !processedAlready)
         {
+            processedAlready = true;
             DMESG("SAMPLER HAS FINISHED");
-            sampler->processResult();
+            bool outcome = sampler->processResult();
+            if (outcome)
+            {
+                DMESG("SUCCESS");
+            }
+            else
+            {
+                DMESG("FAIL");
+            }
         }
-        fiber_sleep(10);
+        fiber_sleep(1);
         // if (uBit.systemTime() - time > 5000)
         // {
         //     sampler->stop();

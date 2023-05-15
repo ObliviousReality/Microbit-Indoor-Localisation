@@ -8,11 +8,13 @@
 
 struct AudioBuffer
 {
-    AudioBuffer(ManagedBuffer b, long t)
+    AudioBuffer(int i, ManagedBuffer b, long t)
     {
+        this->index = i;
         this->buffer = b;
         this->time = t;
     }
+    int index;
     ManagedBuffer buffer;
     long time;
     int mag = 0;
@@ -28,7 +30,7 @@ public:
     ~MicSampler();
     virtual int pullRequest();
 
-    void processResult();
+    bool processResult();
 
     void start()
     {
@@ -52,6 +54,8 @@ private:
     void addSamples(int start, int end, ManagedBuffer b);
     void binaryChop();
     void slidingWindow();
+
+    bool processFFT();
 
     MicroBit *ubit;
     DataSource &source;
