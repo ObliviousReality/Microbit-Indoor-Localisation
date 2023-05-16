@@ -3,6 +3,9 @@
 #include "MicSampler.h"
 #include "global.h"
 
+#include "AudioTimer.h"
+#include "RadioTimer.h"
+
 #include <time.h>
 // #include <sys/time.h>
 
@@ -156,6 +159,13 @@ int main()
     // PRINTFLOAT(t.tv_sec);
     // PRINTFLOAT(t.tv_usec);
     uBit.init();
+    // syncTimer = &uBit.timer;
+    AudioTimer::setTimer(&uBit.timer);
+    RadioTimer::radioTimer = &uBit.timer;
+
+    uBit.sleep(123);
+    uint64_t t = uBit.timer.getTimeUs();
+    PRINTFLOATMSG("TIME uS", t);
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {
