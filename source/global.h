@@ -12,7 +12,10 @@
 #define PRINTCOMPLEX(r, i) DMESG("%d.%d + %d.%di", RAWFLOAT(r), RAWFLOAT(i))
 
 #define PRINTBUFFER(b)                                                                             \
-    DMESG("BUFFER %d: M: %d\tF: %s T: %d", b->index, b->mag, (b->found ? "true " : "false"), b->time)
+    DMESG("BUFFER %d: M: %d\tF: %s T: %d", b->index, b->mag, (b->found ? "true " : "false"),       \
+          b->time)
+
+#define SAMPLE_SIZE 256
 
 #define WINDOW_SIZE 128
 
@@ -27,3 +30,5 @@
 #define BUFFER_BUFFER 5
 
 #define SPLIT_NUMBER 8
+
+#define SAMPLE_LENGTH_MS 23

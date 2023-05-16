@@ -19,8 +19,6 @@ private:
 
     kiss_fft_scalar FFTInput[WINDOW_SIZE];
 
-    kiss_fftr_cfg cfgr;
-
     int magnitude = 0;
 };
 

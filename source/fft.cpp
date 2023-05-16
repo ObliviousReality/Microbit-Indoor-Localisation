@@ -8,7 +8,7 @@ FFT::FFT() {}
 bool FFT::processReal()
 {
     // DMESG("FFT SAMPLE SIZE: %d", sampleNumber);
-    cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
+    kiss_fftr_cfg cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
     kiss_fft_cpx out[sampleNumber];
     kiss_fftr(cfgr, this->FFTInput, out);
 

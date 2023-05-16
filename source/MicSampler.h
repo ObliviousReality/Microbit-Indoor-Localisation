@@ -53,14 +53,14 @@ public:
 private:
     void addSamples(int start, int end, ManagedBuffer b);
     void binaryChop();
-    void slidingWindow();
+    int slidingWindow(ManagedBuffer b);
 
     bool processFFT();
 
     MicroBit *ubit;
     DataSource &source;
     bool active = false;
-    long time = 0;
+    double time = 0;
 
     ManagedBuffer buffer;
     FFT *f = new FFT();
@@ -70,12 +70,8 @@ private:
 
     int bufCounter = 0;
     AudioBuffer **buffers = (AudioBuffer **)malloc(sizeof(AudioBuffer *) * BUFFER_BUFFER);
-    // ManagedBuffer **buffers;
-    // long *times;
-    // bool *found;
-    // int *mags;
-    // bool **subFound;
-    // int **subMags;
+
+    bool frontIndexFlag = true;
 };
 
 #endif
