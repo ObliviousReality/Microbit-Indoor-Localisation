@@ -1,5 +1,6 @@
 #include "MicSampler.h"
 #include <time.h>
+#include "AudioTimer.h"
 
 MicSampler::MicSampler(DataSource &s, MicroBit *ubit) : source(s)
 {
@@ -100,7 +101,6 @@ int MicSampler::slidingWindow(ManagedBuffer b)
         // else
         // magnitudes[mCount++] = 0;
     }
-    char pos = '0';
     for (int i = 0; i < SPLIT_NUMBER; i++)
     {
         DMESG("MAGNITUDE AT POS %d: %d", i, magnitudes[i]);
@@ -150,8 +150,9 @@ int MicSampler::pullRequest()
         fiber_sleep(10);
         return DEVICE_OK;
     }
-    PRINTFLOATMSG("PR AT", ubit->systemTime() - 23); // roughly every 23 ms but does slightly vary.
-    time = ubit->systemTime() - 23; // Sample length is 23ms, so sample began 23ms earlier than PR.
+    PRINTFLOATMSG("PR AT", AudioTimer::audioTime -
+                               SAMPLE_LENGTH_US); // roughly every 23 ms but does slightly vary.
+    time = AudioTimer::audioTime - SAMPLE_LENGTH_US;
     buffer = source.pull();
     aRecv = clock();
     buffers[bufCounter] = new AudioBuffer(bufCounter, buffer, time);

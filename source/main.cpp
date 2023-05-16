@@ -51,24 +51,28 @@ void send()
     }
 }
 
-void distanceCalculation(long audioTime, clock_t aTime2)
+void distanceCalculation(long samplerTime)
 {
+    uBit.log.beginRow();
     uBit.display.print("C");
-    double time = audioTime - radioRecvTime;
-    PRINTFLOATMSG("UBIT CLOCK", time);
-    PRINTFLOATMSG("RAW CLOCK", aTime2);
-    PRINTFLOATMSG("SYS CLOCK", (aTime2 - rRecv) * 1000 / 64000000);
-    double distance = SPEEDOFSOUND * (time / 1000.0f);
-    PRINTFLOATMSG("DISTANCE CALCULATED", distance);
+    long timeDiff_US = samplerTime - RadioTimer::radioTime;
+    uBit.log.logData("RAD TIME (us)", (int)RadioTimer::radioTime);
+    uBit.log.logData("AUD TIME (us)", (int)samplerTime);
+    uBit.log.logData("DIFF (us)", (int)timeDiff_US);
+    // speed = distance / time
+    // distance = speed * time
 
-    fiber_sleep(1000);
-    // send();
-    uBit.reset();
-    // uBit.radio.enable();
-    // while (1)
-    // {
-    //     fiber_sleep(1);
-    // }
+    double distance = SPEEDOFSOUND_CMUS * timeDiff_US;
+    // uBit.display.print(distance);
+    PRINTFLOATMSG("TIME DIFFERENCE", timeDiff_US);
+    PRINTFLOATMSG("DISTANCE", distance);
+    uBit.log.logData("DISTANCE (cm?)", (int)(distance * 1000.0f));
+    uBit.log.endRow();
+    uBit.display.print(".");
+    while (true)
+    {
+        uBit.sleep(100);
+    }
 }
 
 void recv()
@@ -96,6 +100,7 @@ void recv()
             {
                 DMESG("SUCCESS");
                 uBit.display.print("Y");
+                break;
             }
             else
             {
@@ -105,19 +110,7 @@ void recv()
         }
         fiber_sleep(1);
     }
-    // fiber_sleep(20);
-    PRINTFLOATMSG("GOING TO SEND", uBit.systemTime());
-    fiber_sleep(1);
-    uBit.display.setBrightness(255);
-    // playTone(363, 1000, 10);
-    radioPulse = false;
-    if (!timedOut)
-        distanceCalculation(sampler->getTime(), sampler->aRecv);
-    else
-    {
-        uBit.reset();
-    }
-    send();
+    distanceCalculation(sampler->getTime());
 }
 
 void test()
@@ -140,6 +133,7 @@ static void radioReceive(MicroBitEvent)
     radioPulse = true;
     PacketBuffer b = uBit.radio.datagram.recv();
     DMESG("MESSAGE FROM: %s", b.getBytes());
+    PRINTFLOATMSG("MESSAGE RECVD AT", RadioTimer::radioTime);
     recv();
 }
 

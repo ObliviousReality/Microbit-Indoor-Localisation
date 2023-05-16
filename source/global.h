@@ -25,10 +25,18 @@
 
 #define MIC_SAMPLE_RATE 11111 // apparently
 
-#define SPEEDOFSOUND 343 // ms
+#define SPEEDOFSOUND_MS 343 // m/s
+
+#define SPEEDOFSOUND_MMS 0.343 // m/ms
+
+#define SPEEDOFSOUND_MUS 0.000343 // m/us
+
+#define SPEEDOFSOUND_CMUS 0.0343 // cm/us
 
 #define BUFFER_BUFFER 5
 
 #define SPLIT_NUMBER 8
 
 #define SAMPLE_LENGTH_MS 23
+
+#define SAMPLE_LENGTH_US 23000
