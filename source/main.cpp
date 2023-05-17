@@ -53,7 +53,7 @@ void send()
     }
 }
 
-void distanceCalculation(long samplerTime)
+void distanceCalculation(long samplerTime, int samplerTime2)
 {
     uBit.display.print("C");
     long timeDiff_US = samplerTime - RadioTimer::radioTime;
@@ -64,10 +64,12 @@ void distanceCalculation(long samplerTime)
     // distance = speed * time
 
     double distance = SPEEDOFSOUND_CMUS * timeDiff_US;
+    double distance2 = SPEEDOFSOUND_CMUS * samplerTime2;
     // uBit.display.print(distance);
     PRINTFLOATMSG("TIME DIFFERENCE", timeDiff_US);
     PRINTFLOATMSG("DISTANCE", distance);
     uBit.log.logData("DISTANCE (cm?)", (int)(distance * 1000.0f));
+    uBit.log.logData("DISTANCE 2 (cm?)", (int)(distance2 * 1000.0f));
     uBit.log.endRow();
     uBit.display.print("Y");
     uBit.sleep(300);
@@ -112,7 +114,7 @@ void recv()
         }
         fiber_sleep(1);
     }
-    distanceCalculation(sampler->getTime());
+    distanceCalculation(sampler->getTime(), sampler->timeTakenUS);
 }
 
 void test()

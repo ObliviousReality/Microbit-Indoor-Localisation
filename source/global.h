@@ -42,3 +42,5 @@
 #define BUFFER_LENGTH_US 23000
 
 #define SAMPLE_LENGTH_US 90
+
+#define APPROACH 1

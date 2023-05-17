@@ -47,6 +47,8 @@ public:
     ManagedBuffer getBuffer() { return this->buffer; }
     long getTime() { return this->time; }
 
+    int timeTakenUS = 0;
+
     bool foundResult() { return this->outcome; }
     clock_t aRecv = 0;
 
@@ -54,6 +56,7 @@ private:
     void addSamples(int start, int end, ManagedBuffer b);
     void binaryChop();
     int slidingWindow(ManagedBuffer b);
+    int slidingWindowTwo(ManagedBuffer b);
 
     bool processFFT();
 
