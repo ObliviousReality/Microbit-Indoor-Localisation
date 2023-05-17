@@ -47,13 +47,14 @@ void send()
     {
         uBit.radio.datagram.send(name);
         // fiber_sleep(20);
-        playTone(TRANSMIT_FREQUENCY, 20, 2000);
+        playTone(TRANSMIT_FREQUENCY, 50, 1000);
+        // uBit.sleep(500);
+        // uBit.reset();
     }
 }
 
 void distanceCalculation(long samplerTime)
 {
-    uBit.log.beginRow();
     uBit.display.print("C");
     long timeDiff_US = samplerTime - RadioTimer::radioTime;
     uBit.log.logData("RAD TIME (us)", (int)RadioTimer::radioTime);
@@ -68,11 +69,9 @@ void distanceCalculation(long samplerTime)
     PRINTFLOATMSG("DISTANCE", distance);
     uBit.log.logData("DISTANCE (cm?)", (int)(distance * 1000.0f));
     uBit.log.endRow();
-    uBit.display.print(".");
-    while (true)
-    {
-        uBit.sleep(100);
-    }
+    uBit.display.print("Y");
+    uBit.sleep(300);
+    uBit.reset();
 }
 
 void recv()
@@ -85,6 +84,7 @@ void recv()
     sampler->start();
     bool timedOut = false;
     bool processedAlready = false;
+
     while (true)
     {
         // DMESG("LOOP");
@@ -92,9 +92,9 @@ void recv()
         {
             processedAlready = true;
             DMESG("SAMPLER HAS FINISHED");
-            uBit.sleep(1000);
+            // uBit.sleep(1000);
             DMESG("-");
-            uBit.sleep(1000);
+            // uBit.sleep(1000);
             bool outcome = sampler->processResult();
             if (outcome)
             {
@@ -106,6 +106,8 @@ void recv()
             {
                 DMESG("FAIL");
                 uBit.display.print("N");
+                fiber_sleep(300);
+                uBit.reset();
             }
         }
         fiber_sleep(1);
@@ -153,6 +155,7 @@ int main()
     // PRINTFLOAT(t.tv_sec);
     // PRINTFLOAT(t.tv_usec);
     uBit.init();
+    uBit.log.setTimeStamp(TimeStampFormat::Milliseconds);
     // syncTimer = &uBit.timer;
     AudioTimer::setTimer(&uBit.timer);
     RadioTimer::radioTimer = &uBit.timer;

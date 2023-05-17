@@ -19,8 +19,8 @@ struct AudioBuffer
     long time;
     int mag = 0;
     bool found = false;
-    int *subMags = (int *)malloc(sizeof(int) * SPLIT_NUMBER);
-    bool *subFounds = (bool *)malloc(sizeof(bool) * SPLIT_NUMBER);
+    // int *subMags = (int *)malloc(sizeof(int) * SPLIT_NUMBER);
+    // bool *subFounds = (bool *)malloc(sizeof(bool) * SPLIT_NUMBER);
 };
 
 class MicSampler : public DataSink
@@ -70,8 +70,6 @@ private:
 
     int bufCounter = 0;
     AudioBuffer **buffers = (AudioBuffer **)malloc(sizeof(AudioBuffer *) * BUFFER_BUFFER);
-
-    bool frontIndexFlag = true;
 };
 
 #endif

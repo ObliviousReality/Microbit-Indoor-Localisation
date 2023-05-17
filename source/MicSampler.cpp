@@ -87,8 +87,6 @@ int MicSampler::slidingWindow(ManagedBuffer b)
     int *magnitudes = (int *)malloc(sizeof(int) * SPLIT_NUMBER);
     bool *founds = (bool *)malloc(sizeof(bool) * SPLIT_NUMBER);
     int mCount = 0;
-    DMESG("SW LOOP START");
-    fiber_sleep(1);
     for (int i = 0; i < WINDOW_SIZE; i += frameSize)
     {
         DMESG("WINDOW RANGE: %d -> %d", i, i + frameSize);
@@ -101,40 +99,16 @@ int MicSampler::slidingWindow(ManagedBuffer b)
         // else
         // magnitudes[mCount++] = 0;
     }
-    for (int i = 0; i < SPLIT_NUMBER; i++)
-    {
-        DMESG("MAGNITUDE AT POS %d: %d", i, magnitudes[i]);
-        // ubit->display.clear();
-        // ubit->sleep(1000);
-        // ubit->display.print(magnitudes[i]);
-        // ubit->sleep(1000);
-    }
 
     int ctr = 0;
-    int firstTrueIndex;
-    int lastTrueIndex;
-    frontIndexFlag = true;
     while (!founds[ctr])
     {
         ctr++;
         if (ctr > SPLIT_NUMBER)
             return -1;
     }
-
-    firstTrueIndex = ctr;
-    if (firstTrueIndex == 0)
-    {
-        while (founds[ctr])
-        {
-            ctr++;
-            if (ctr > SPLIT_NUMBER)
-                return firstTrueIndex;
-        }
-        frontIndexFlag = false;
-        lastTrueIndex = ctr;
-    }
-    fiber_sleep(10);
-    return firstTrueIndex;
+    // fiber_sleep(10);
+    return ctr;
 }
 
 int MicSampler::pullRequest()
@@ -149,6 +123,11 @@ int MicSampler::pullRequest()
         this->stop();
         fiber_sleep(10);
         return DEVICE_OK;
+    }
+    if (!ubit->audio.mic->isEnabled())
+    {
+        DMESG("MIC DISABLED, RESETTING");
+        ubit->reset();
     }
     PRINTFLOATMSG("PR AT", AudioTimer::audioTime -
                                SAMPLE_LENGTH_US); // roughly every 23 ms but does slightly vary.
@@ -176,6 +155,7 @@ bool MicSampler::processResult()
         PRINTBUFFER(buffers[i]);
     }
 
+    ubit->log.beginRow();
     for (int i = 0; i < BUFFER_BUFFER; i++)
     {
         if (buffers[i]->found)
@@ -184,19 +164,25 @@ bool MicSampler::processResult()
             int index = slidingWindow(buffers[i]->buffer);
             if (index >= 0)
             {
-                if (frontIndexFlag)
-                {
-                    time = buffers[i]->time + (SAMPLE_LENGTH_MS * (index / SPLIT_NUMBER));
-                    PRINTFLOATMSG("TIME", time);
-                    // ubit->display.print(time);
-                }
-                else
-                {
-                    time = buffers[i]->time + (SAMPLE_LENGTH_MS * (index / SPLIT_NUMBER)) - 20;
-                    PRINTFLOATMSG("TIME", time);
-                }
+
+                ubit->log.logData("BUF", i);
+                ubit->log.logData("WINDOW", index);
+                ubit->log.logData("RAW AUD", (int)buffers[i]->time);
+                ubit->log.logData("MAG", (int)buffers[i]->mag);
+                // if (frontIndexFlag)
+                // {
+                time = buffers[i]->time + (SAMPLE_LENGTH_US * (WINDOW_SIZE / SPLIT_NUMBER)) * index;
+                PRINTFLOATMSG("TIME", time);
+                // ubit->display.print(time);
+                // }
+                // else
+                // {
+                //     time = buffers[i]->time + (SAMPLE_LENGTH_MS * (index / SPLIT_NUMBER)) - 20;
+                //     PRINTFLOATMSG("TIME", time);
+                // }
             }
             fiber_sleep(1);
+            break;
         }
     }
 
