@@ -81,27 +81,28 @@ void MicSampler::binaryChop()
 
 int MicSampler::slidingWindowTwo(ManagedBuffer b)
 {
-    int frameSize = 32;
     int curMag = 0;
     int prevMag = 0;
     bool curFound = false;
-    bool prevFound = false;
-    for (int i = 0; i < b.length() - frameSize; i++)
+    bool prevFound = true;
+    for (int i = 0; i < b.length() - SLIDINGWINDOWSIZE; i++)
     {
-        this->addSamples(i, i + frameSize, b);
+        this->addSamples(i, i + SLIDINGWINDOWSIZE, b);
         curFound = this->f->processReal();
         curMag = this->f->getMag();
         if (i != 0)
         {
-            if (curFound && !prevFound)
+            if ((curFound && !prevFound))
             {
-                return curFound;
+                // ubit->log.logData("CURFOUND", curFound);
+                // ubit->log.logData("PREVFOUND", prevFound);
+                // ubit->log.logData("CURMAG", curMag);
+                // ubit->log.logData("PREVMAG", prevMag);
+                return i;
             }
         }
-        // else
-        // {
-        //     return 0;
-        // }
+        prevFound = curFound;
+        prevMag = curMag;
     }
     return -1;
 }
@@ -168,78 +169,126 @@ int MicSampler::pullRequest()
 
 bool MicSampler::processResult()
 {
-    // bool anyFound = false;
-    // for (int i = 0; i < BUFFER_BUFFER; i++)
-    // {
-    //     this->addSamples(0, WINDOW_SIZE, buffers[i]->buffer);
-    //     bool r = this->f->processReal();
-    //     buffers[i]->found = r;
-    //     buffers[i]->mag = f->getMag();
-    //     if (r)
-    //     {
-    //         anyFound = true;
-    //     }
-    //     PRINTBUFFER(buffers[i]);
-    // }
-
-    ubit->log.beginRow();
+    bool anyFound = false;
     for (int i = 0; i < BUFFER_BUFFER; i++)
     {
-        // if (buffers[i]->found)
-        // {
-        DMESG("%d:", i);
-        if (APPROACH == 0)
+        this->addSamples(0, WINDOW_SIZE, buffers[i]->buffer);
+        bool a = this->f->processReal();
+        this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, buffers[i]->buffer);
+        bool b = this->f->processReal();
+        if (a || b)
         {
-            int index = slidingWindow(buffers[i]->buffer);
-            if (index >= 0)
-            {
+            anyFound = true;
+        }
+    }
 
-                ubit->log.logData("BUF", i);
-                ubit->log.logData("WINDOW", index);
-                ubit->log.logData("RAW AUD", (int)buffers[i]->time);
-                ubit->log.logData("MAG", (int)buffers[i]->mag);
-                // if (frontIndexFlag)
-                // {
-                time = buffers[i]->time + (SAMPLE_LENGTH_US * (WINDOW_SIZE / SPLIT_NUMBER)) * index;
-                this->timeTakenUS = i * (SAMPLE_SIZE * SAMPLE_LENGTH_US) +
-                                    ((SAMPLE_LENGTH_US * (WINDOW_SIZE / SPLIT_NUMBER)) * index);
-                ubit->log.logData("ALT TIME", timeTakenUS);
-                PRINTFLOATMSG("TIME", time);
-                // ubit->display.print(time);
-                // }
-                // else
-                // {
-                //     time = buffers[i]->time + (SAMPLE_LENGTH_MS * (index / SPLIT_NUMBER)) -
-                //     20; PRINTFLOATMSG("TIME", time);
-                // }
-                fiber_sleep(1);
-                break;
-            }
+    if (!anyFound)
+    {
+        DMESG("NOT FOUND FREQUENCY");
+        fiber_sleep(10);
+        return false;
+    }
+
+    // int fullData[(SAMPLE_SIZE * 2) + (2 * SLIDINGWINDOWSIZE)];
+    ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE * 2) + (2 * SLIDINGWINDOWSIZE));
+    int tempBufInd = 0;
+    int16_t *bufferOneData = (int16_t *)&buffers[1]->buffer[0];
+    int16_t *bufferTwoData = (int16_t *)&buffers[2]->buffer[0];
+    for (int i = 0; i < (SAMPLE_SIZE * 2) + (2 * SLIDINGWINDOWSIZE); i++)
+    {
+        if (i < SLIDINGWINDOWSIZE || i > (SAMPLE_SIZE * 2) + SLIDINGWINDOWSIZE)
+        {
+            // fullData[i] = 0;
+            fullBuffer.setByte(i, 0);
+        }
+        if (i == SLIDINGWINDOWSIZE + SAMPLE_SIZE)
+        {
+            tempBufInd++;
+        }
+        if (!tempBufInd)
+        {
+            // fullData[i] = (int)bufferOneData++;
+            fullBuffer.setByte(i, (int)bufferOneData++);
         }
         else
         {
-            int index = this->slidingWindowTwo(buffers[i]->buffer);
-            if (index >= 0)
-            {
-                ubit->log.logData("BUF", i);
-                ubit->log.logData("SAMPLE", index);
-                ubit->log.logData("RAW AUD", (int)buffers[i]->time);
-                ubit->log.logData("MAG", (int)buffers[i]->mag);
-                this->time = buffers[i]->time + (SAMPLE_LENGTH_US * index);
-                this->timeTakenUS = (i * (SAMPLE_SIZE + index)) * SAMPLE_LENGTH_US;
-                ubit->log.logData("ALT TIME", timeTakenUS);
-                break;
-            }
+            fullBuffer.setByte(i, (int)bufferTwoData++);
+            // fullData[i] = (int)bufferTwoData++;
         }
-        // }
     }
-
-    // if (!anyFound)
+    ubit->log.beginRow();
+    int index;
+    // for (int i = 0; i < BUFFER_BUFFER; i++)
     // {
-    //     DMESG("NOT FOUND FREQUENCY");
-    //     fiber_sleep(10);
-    //     return false;
+    //     // if (buffers[i]->found)
+    //     // {
+    //     DMESG("%d:", i);
+    //     if (APPROACH == 0)
+    //     {
+    //         int index = slidingWindow(buffers[i]->buffer);
+    //         if (index >= 0)
+    //         {
+
+    //             ubit->log.logData("BUF", i);
+    //             ubit->log.logData("WINDOW", index);
+    //             ubit->log.logData("RAW AUD", (int)buffers[i]->time);
+    //             ubit->log.logData("MAG", (int)buffers[i]->mag);
+    //             // if (frontIndexFlag)
+    //             // {
+    //             time = buffers[i]->time + (SAMPLE_LENGTH_US * (WINDOW_SIZE / SPLIT_NUMBER)) *
+    //             index; this->timeTakenUS = i * (SAMPLE_SIZE * SAMPLE_LENGTH_US) +
+    //                                 ((SAMPLE_LENGTH_US * (WINDOW_SIZE / SPLIT_NUMBER)) *
+    //                                 index);
+    //             ubit->log.logData("ALT TIME", timeTakenUS);
+    //             PRINTFLOATMSG("TIME", time);
+    //             // ubit->display.print(time);
+    //             // }
+    //             // else
+    //             // {
+    //             //     time = buffers[i]->time + (SAMPLE_LENGTH_MS * (index / SPLIT_NUMBER))
+    //             -
+    //             //     20; PRINTFLOATMSG("TIME", time);
+    //             // }
+    //             fiber_sleep(1);
+    //             break;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         this->addSamples(0, WINDOW_SIZE, buffers[i]->buffer);
+    //         bool a = this->f->processReal();
+    //         this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, buffers[i]->buffer);
+    //         bool b = this->f->processReal();
+    //         if (a || b)
+    //         {
+    //             anyFound = true;
+    //             index = this->slidingWindowTwo(buffers[i]->buffer);
+    //             if (index >= 0)
+    //             {
+    //                 ubit->log.logData("BUF", i);
+    //                 ubit->log.logData("SAMPLE", index);
+    //                 ubit->log.logData("RAW AUD", (int)buffers[i]->time);
+    //                 ubit->log.logData("MAG", (int)buffers[i]->mag);
+    //                 this->time = buffers[i]->time + (SAMPLE_LENGTH_US * index);
+    //                 this->timeTakenUS = (((i - 1) * SAMPLE_SIZE) + index) * SAMPLE_LENGTH_US;
+    //                 break;
+    //             }
+    //         }
+    //     }
     // }
+
+    index = this->slidingWindowTwo(fullBuffer);
+    if (index == -1)
+    {
+        DMESG("NOT FOUND FREQUENCY");
+        fiber_sleep(10);
+        return false;
+    }
+    ubit->log.logData("SAMPLE", index);
+    ubit->log.logData("RAW AUD", (int)buffers[1]->time);
+    this->time = buffers[1]->time + (SAMPLE_LENGTH_US * index);
+    this->timeTakenUS = SAMPLE_LENGTH_US * index;
+    ubit->log.logData("ALT TIME", timeTakenUS);
     ubit->display.print("T");
     DMESG("RETURN TRUE");
     fiber_sleep(1);

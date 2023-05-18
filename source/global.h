@@ -44,3 +44,5 @@
 #define SAMPLE_LENGTH_US 90
 
 #define APPROACH 1
+
+#define SLIDINGWINDOWSIZE 16
