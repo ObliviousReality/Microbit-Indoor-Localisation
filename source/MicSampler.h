@@ -56,7 +56,6 @@ private:
     void addSamples(int start, int end, ManagedBuffer b);
     void binaryChop();
     int slidingWindow(ManagedBuffer b);
-    int slidingWindowTwo(ManagedBuffer b);
 
     bool processFFT();
 

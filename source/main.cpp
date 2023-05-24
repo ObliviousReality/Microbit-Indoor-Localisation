@@ -47,7 +47,8 @@ void send()
     {
         uBit.radio.datagram.send(name);
         // fiber_sleep(20);
-        playTone(TRANSMIT_FREQUENCY, 50, 1000);
+        // playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS);
+        playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS, 1500);
         // uBit.sleep(500);
         // uBit.reset();
     }

@@ -79,12 +79,12 @@ void MicSampler::binaryChop()
     return;
 }
 
-int MicSampler::slidingWindowTwo(ManagedBuffer b)
+int MicSampler::slidingWindow(ManagedBuffer b)
 {
     int curMag = 0;
     int prevMag = 0;
     bool curFound = false;
-    bool prevFound = true;
+    bool prevFound = false;
     for (int i = 0; i < b.length() - SLIDINGWINDOWSIZE; i++)
     {
         this->addSamples(i, i + SLIDINGWINDOWSIZE, b);
@@ -94,10 +94,6 @@ int MicSampler::slidingWindowTwo(ManagedBuffer b)
         {
             if ((curFound && !prevFound))
             {
-                // ubit->log.logData("CURFOUND", curFound);
-                // ubit->log.logData("PREVFOUND", prevFound);
-                // ubit->log.logData("CURMAG", curMag);
-                // ubit->log.logData("PREVMAG", prevMag);
                 return i;
             }
         }
@@ -105,38 +101,6 @@ int MicSampler::slidingWindowTwo(ManagedBuffer b)
         prevMag = curMag;
     }
     return -1;
-}
-
-int MicSampler::slidingWindow(ManagedBuffer b)
-{
-    // ubit->display.print("W");
-    DMESG("SLIDING WINDOW");
-    int frameSize = (WINDOW_SIZE / SPLIT_NUMBER);
-    int *magnitudes = (int *)malloc(sizeof(int) * SPLIT_NUMBER);
-    bool *founds = (bool *)malloc(sizeof(bool) * SPLIT_NUMBER);
-    int mCount = 0;
-    for (int i = 0; i < WINDOW_SIZE; i += frameSize)
-    {
-        DMESG("WINDOW RANGE: %d -> %d", i, i + frameSize);
-        fiber_sleep(10);
-        this->addSamples(i, i + frameSize, b);
-        bool r = this->f->processReal();
-        // if (r)
-        founds[mCount] = r;
-        magnitudes[mCount++] = this->f->getMag();
-        // else
-        // magnitudes[mCount++] = 0;
-    }
-
-    int ctr = 0;
-    while (!founds[ctr])
-    {
-        ctr++;
-        if (ctr > SPLIT_NUMBER)
-            return -1;
-    }
-    // fiber_sleep(10);
-    return ctr;
 }
 
 int MicSampler::pullRequest()
@@ -158,8 +122,8 @@ int MicSampler::pullRequest()
         ubit->reset();
     }
     PRINTFLOATMSG("PR AT", AudioTimer::audioTime -
-                               SAMPLE_LENGTH_US); // roughly every 23 ms but does slightly vary.
-    time = AudioTimer::audioTime - SAMPLE_LENGTH_US;
+                               BUFFER_LENGTH_US); // roughly every 23 ms but does slightly vary.
+    time = AudioTimer::audioTime - BUFFER_LENGTH_US;
     buffer = source.pull();
     aRecv = clock();
     buffers[bufCounter] = new AudioBuffer(bufCounter, buffer, time);
@@ -188,107 +152,56 @@ bool MicSampler::processResult()
         fiber_sleep(10);
         return false;
     }
-
-    // int fullData[(SAMPLE_SIZE * 2) + (2 * SLIDINGWINDOWSIZE)];
     ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE * 2) + (2 * SLIDINGWINDOWSIZE));
-    int tempBufInd = 0;
-    int16_t *bufferOneData = (int16_t *)&buffers[1]->buffer[0];
-    int16_t *bufferTwoData = (int16_t *)&buffers[2]->buffer[0];
-    for (int i = 0; i < (SAMPLE_SIZE * 2) + (2 * SLIDINGWINDOWSIZE); i++)
+    int tempBufInd = 1;
+    int16_t *bufferData = (int16_t *)&buffers[1]->buffer[0];
+    for (int i = 0; i < (SAMPLE_SIZE * 4) + (2 * SLIDINGWINDOWSIZE); i++)
     {
-        if (i < SLIDINGWINDOWSIZE || i > (SAMPLE_SIZE * 2) + SLIDINGWINDOWSIZE)
+        if (i < SLIDINGWINDOWSIZE || i > (SAMPLE_SIZE * 4) + SLIDINGWINDOWSIZE)
         {
-            // fullData[i] = 0;
             fullBuffer.setByte(i, 0);
         }
-        if (i == SLIDINGWINDOWSIZE + SAMPLE_SIZE)
+        if (i == SLIDINGWINDOWSIZE + ((tempBufInd + 1) * SAMPLE_SIZE))
         {
-            tempBufInd++;
+            bufferData = (int16_t *)&buffers[++tempBufInd]->buffer[0];
         }
         if (!tempBufInd)
         {
-            // fullData[i] = (int)bufferOneData++;
-            fullBuffer.setByte(i, (int)bufferOneData++);
+            fullBuffer.setByte(i, (int)bufferData++);
         }
         else
         {
-            fullBuffer.setByte(i, (int)bufferTwoData++);
-            // fullData[i] = (int)bufferTwoData++;
+            fullBuffer.setByte(i, (int)bufferData++);
         }
     }
+
     ubit->log.beginRow();
-    int index;
-    // for (int i = 0; i < BUFFER_BUFFER; i++)
-    // {
-    //     // if (buffers[i]->found)
-    //     // {
-    //     DMESG("%d:", i);
-    //     if (APPROACH == 0)
-    //     {
-    //         int index = slidingWindow(buffers[i]->buffer);
-    //         if (index >= 0)
-    //         {
+    int index = this->slidingWindow(fullBuffer) - 256;
 
-    //             ubit->log.logData("BUF", i);
-    //             ubit->log.logData("WINDOW", index);
-    //             ubit->log.logData("RAW AUD", (int)buffers[i]->time);
-    //             ubit->log.logData("MAG", (int)buffers[i]->mag);
-    //             // if (frontIndexFlag)
-    //             // {
-    //             time = buffers[i]->time + (SAMPLE_LENGTH_US * (WINDOW_SIZE / SPLIT_NUMBER)) *
-    //             index; this->timeTakenUS = i * (SAMPLE_SIZE * SAMPLE_LENGTH_US) +
-    //                                 ((SAMPLE_LENGTH_US * (WINDOW_SIZE / SPLIT_NUMBER)) *
-    //                                 index);
-    //             ubit->log.logData("ALT TIME", timeTakenUS);
-    //             PRINTFLOATMSG("TIME", time);
-    //             // ubit->display.print(time);
-    //             // }
-    //             // else
-    //             // {
-    //             //     time = buffers[i]->time + (SAMPLE_LENGTH_MS * (index / SPLIT_NUMBER))
-    //             -
-    //             //     20; PRINTFLOATMSG("TIME", time);
-    //             // }
-    //             fiber_sleep(1);
-    //             break;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         this->addSamples(0, WINDOW_SIZE, buffers[i]->buffer);
-    //         bool a = this->f->processReal();
-    //         this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, buffers[i]->buffer);
-    //         bool b = this->f->processReal();
-    //         if (a || b)
-    //         {
-    //             anyFound = true;
-    //             index = this->slidingWindowTwo(buffers[i]->buffer);
-    //             if (index >= 0)
-    //             {
-    //                 ubit->log.logData("BUF", i);
-    //                 ubit->log.logData("SAMPLE", index);
-    //                 ubit->log.logData("RAW AUD", (int)buffers[i]->time);
-    //                 ubit->log.logData("MAG", (int)buffers[i]->mag);
-    //                 this->time = buffers[i]->time + (SAMPLE_LENGTH_US * index);
-    //                 this->timeTakenUS = (((i - 1) * SAMPLE_SIZE) + index) * SAMPLE_LENGTH_US;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-
-    index = this->slidingWindowTwo(fullBuffer);
     if (index == -1)
     {
         DMESG("NOT FOUND FREQUENCY");
         fiber_sleep(10);
         return false;
     }
+
+    // int estimatedEndSample = index + (CHIRPLENGTH_US / SAMPLE_LENGTH_US);
+
+    // this->addSamples(estimatedEndSample - 16, estimatedEndSample, fullBuffer);
+    // bool lastWindow = this->f->processReal();
+    // int lastWindowMag = this->f->getMag();
+
+    // this->addSamples(estimatedEndSample + 1, estimatedEndSample + 17, fullBuffer);
+    // bool nextWindow = this->f->processReal();
+    // int nextWindowMag = this->f->getMag();
+
     ubit->log.logData("SAMPLE", index);
     ubit->log.logData("RAW AUD", (int)buffers[1]->time);
     this->time = buffers[1]->time + (SAMPLE_LENGTH_US * index);
     this->timeTakenUS = SAMPLE_LENGTH_US * index;
     ubit->log.logData("ALT TIME", timeTakenUS);
+    // ubit->log.logData("lastWindow", lastWindow);
+    // ubit->log.logData("nextWindow", nextWindow);
     ubit->display.print("T");
     DMESG("RETURN TRUE");
     fiber_sleep(1);
