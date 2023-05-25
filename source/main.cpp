@@ -80,17 +80,21 @@ void distanceCalculation(long samplerTime, int samplerTime2)
 void recv()
 {
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel(), &uBit);
+    sampler->start();
     uBit.display.print("R");
     long time = uBit.systemTime();
     PRINTFLOATMSG("LOOP START", time);
     radioRecvTime = uBit.systemTime();
-    sampler->start();
     bool timedOut = false;
     bool processedAlready = false;
 
     while (true)
     {
         // DMESG("LOOP");
+        if (radioPulse)
+        {
+            sampler->terminate();
+        }
         if (sampler->foundResult() && !processedAlready)
         {
             processedAlready = true;
@@ -139,7 +143,7 @@ static void radioReceive(MicroBitEvent)
     PacketBuffer b = uBit.radio.datagram.recv();
     DMESG("MESSAGE FROM: %s", b.getBytes());
     PRINTFLOATMSG("MESSAGE RECVD AT", RadioTimer::radioTime);
-    recv();
+    // recv();
 }
 
 void bee()
@@ -163,7 +167,6 @@ int main()
     AudioTimer::setTimer(&uBit.timer);
     RadioTimer::radioTimer = &uBit.timer;
 
-    uBit.sleep(123);
     uint64_t t = uBit.timer.getTimeUs();
     PRINTFLOATMSG("TIME uS", t);
     uint64_t val = uBit.getSerialNumber();
@@ -177,6 +180,7 @@ int main()
     uBit.radio.setGroup(5);
     uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
+
     PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
 
     PRINTFLOATMSG("RECV START", uBit.systemTime());

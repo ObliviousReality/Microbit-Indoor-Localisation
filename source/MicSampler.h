@@ -8,13 +8,11 @@
 
 struct AudioBuffer
 {
-    AudioBuffer(int i, ManagedBuffer b, long t)
+    AudioBuffer(ManagedBuffer b, long t)
     {
-        this->index = i;
         this->buffer = b;
         this->time = t;
     }
-    int index;
     ManagedBuffer buffer;
     long time;
     int mag = 0;
@@ -42,6 +40,8 @@ public:
         this->active = false;
         this->outcome = true;
     }
+
+    void terminate() { this->terminating = 1; }
 
     void goAgain() { this->outcome = false; }
     ManagedBuffer getBuffer() { return this->buffer; }
@@ -72,6 +72,8 @@ private:
 
     int bufCounter = 0;
     AudioBuffer **buffers = (AudioBuffer **)malloc(sizeof(AudioBuffer *) * BUFFER_BUFFER);
+
+    int terminating = 0;
 };
 
 #endif

@@ -109,13 +109,13 @@ int MicSampler::pullRequest()
     {
         return DEVICE_OK;
     }
-    if (bufCounter == BUFFER_BUFFER)
-    {
-        DMESG("STOPPING, BUFFER FILLED");
-        this->stop();
-        fiber_sleep(10);
-        return DEVICE_OK;
-    }
+    // if (bufCounter == BUFFER_BUFFER)
+    // {
+    //     DMESG("STOPPING, BUFFER FILLED");
+    //     this->stop();
+    //     fiber_sleep(10);
+    //     return DEVICE_OK;
+    // }
     if (!ubit->audio.mic->isEnabled())
     {
         DMESG("MIC DISABLED, RESETTING");
@@ -126,13 +126,23 @@ int MicSampler::pullRequest()
     time = AudioTimer::audioTime - BUFFER_LENGTH_US;
     buffer = source.pull();
     aRecv = clock();
-    buffers[bufCounter] = new AudioBuffer(bufCounter, buffer, time);
-    bufCounter++;
+    DMESG("BUF COUNTER: %d", this->bufCounter); 
+    buffers[this->bufCounter] = new AudioBuffer(buffer, time);
+    this->bufCounter++;
+    if (bufCounter >= BUFFER_BUFFER)
+    {
+        bufCounter = 0;
+    }
+    if (terminating == 1)
+    {
+        this->stop();
+    }
     return DEVICE_OK;
 }
 
 bool MicSampler::processResult()
 {
+    DMESG("PROCESS TIME");
     bool anyFound = false;
     for (int i = 0; i < BUFFER_BUFFER; i++)
     {
