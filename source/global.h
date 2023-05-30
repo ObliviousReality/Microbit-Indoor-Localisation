@@ -21,7 +21,7 @@
 
 #define TRANSMIT_FREQUENCY 2700
 
-#define RECVTIMEOUT 100000
+#define RECVTIMEOUT 5000
 
 #define MIC_SAMPLE_RATE 11111 // apparently
 

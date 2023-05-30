@@ -40,6 +40,9 @@ bool FFT::processReal()
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
     int ind = 2700 / rate;
+
+
+
     // PRINTFLOATMSG("FREQUENCY/2", (int)(freq / 2));
     // if (freq > TRANSMIT_FREQUENCY - 100 && freq < TRANSMIT_FREQUENCY + 100)
     // {
@@ -50,7 +53,7 @@ bool FFT::processReal()
     // }
     // PRINTFLOATMSG("MAG", mag[ind]);
     this->magnitude = mag[ind];
-    if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
+    // if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
     {
         if (mag[ind] < MAG_THRESHOLD)
         {

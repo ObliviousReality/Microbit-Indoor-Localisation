@@ -13,7 +13,8 @@ static void radioReceive(MicroBitEvent);
 void recv();
 
 MicroBit uBit;
-SoundOutputPin *pin = &uBit.audio.virtualOutputPin;
+// SoundOutputPin *pin = &uBit.audio.virtualOutputPin;
+Pin *pin = &uBit.io.speaker;
 
 char prompts[] = {'<', 'S', '<', ' ', '>', 'R', '>', ' '};
 int promptCounter = 0;
@@ -28,6 +29,8 @@ clock_t rRecv;
 
 bool radioPulse = false;
 
+long time2point5;
+long time2point75;
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
@@ -45,16 +48,22 @@ void send()
     uBit.display.print("S");
     while (true)
     {
+        // long timeOne = uBit.timer.getTimeUs();
         uBit.radio.datagram.send(name);
+        // long timeTwo = uBit.timer.getTimeUs();
+        playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS, 2000);
+        // long timeThree = uBit.timer.getTimeUs();
         // fiber_sleep(20);
         // playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS);
-        playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS, 1500);
         // uBit.sleep(500);
         // uBit.reset();
+        // DMESG("%d %d %d %d %d %d %d %d %d", timeOne, timeTwo - timeOne, timeTwo,
+        //       time2point5 - timeTwo, time2point5, time2point75 - time2point5, time2point75,
+        //       timeThree - time2point75, timeThree);
     }
 }
 
-void distanceCalculation(long samplerTime, int samplerTime2)
+void distanceCalculation(long samplerTime)
 {
     uBit.display.print("C");
     long timeDiff_US = samplerTime - RadioTimer::radioTime;
@@ -65,12 +74,10 @@ void distanceCalculation(long samplerTime, int samplerTime2)
     // distance = speed * time
 
     double distance = SPEEDOFSOUND_CMUS * timeDiff_US;
-    double distance2 = SPEEDOFSOUND_CMUS * samplerTime2;
     // uBit.display.print(distance);
     PRINTFLOATMSG("TIME DIFFERENCE", timeDiff_US);
     PRINTFLOATMSG("DISTANCE", distance);
-    uBit.log.logData("DISTANCE (cm?)", (int)(distance * 1000.0f));
-    uBit.log.logData("DISTANCE 2 (cm?)", (int)(distance2 * 1000.0f));
+    uBit.log.logData("DISTANCE (cm?)", (int)(distance));
     uBit.log.endRow();
     uBit.display.print("Y");
     uBit.sleep(300);
@@ -83,43 +90,47 @@ void recv()
     sampler->start();
     uBit.display.print("R");
     long time = uBit.systemTime();
-    PRINTFLOATMSG("LOOP START", time);
-    radioRecvTime = uBit.systemTime();
+    // PRINTFLOATMSG("LOOP START", time);
+    // radioRecvTime = uBit.systemTime();
     bool timedOut = false;
     bool processedAlready = false;
 
     while (true)
     {
-        // DMESG("LOOP");
-        if (radioPulse)
+        if (RadioTimer::pulseReceived)
         {
+            // DMESG("LOOOOOOOOOOOOOOOOOOOOsP");
             sampler->terminate();
         }
         if (sampler->foundResult() && !processedAlready)
         {
             processedAlready = true;
-            DMESG("SAMPLER HAS FINISHED");
+            // DMESG("SAMPLER HAS FINISHED");
             // uBit.sleep(1000);
-            DMESG("-");
+            // DMESG("-");
             // uBit.sleep(1000);
-            bool outcome = sampler->processResult();
+            bool outcome = sampler->processResult2(RadioTimer::radioTime);
             if (outcome)
             {
-                DMESG("SUCCESS");
+                // DMESG("SUCCESS");
                 uBit.display.print("Y");
                 break;
             }
             else
             {
-                DMESG("FAIL");
+                // DMESG("FAIL");
                 uBit.display.print("N");
                 fiber_sleep(300);
                 uBit.reset();
             }
         }
+        if (uBit.systemTime() - time > RECVTIMEOUT)
+        {
+            uBit.reset();
+        }
         fiber_sleep(1);
     }
-    distanceCalculation(sampler->getTime(), sampler->timeTakenUS);
+    distanceCalculation(sampler->getTime());
 }
 
 void test()
@@ -133,16 +144,18 @@ void test()
 
 static void radioReceive(MicroBitEvent)
 {
-    radioRecvTime = uBit.systemTime();
-    rRecv = clock();
+    // radioRecvTime = uBit.systemTime();
+    // rRecv = clock();
     if (radioPulse)
     {
         return;
     }
     radioPulse = true;
     PacketBuffer b = uBit.radio.datagram.recv();
-    DMESG("MESSAGE FROM: %s", b.getBytes());
-    PRINTFLOATMSG("MESSAGE RECVD AT", RadioTimer::radioTime);
+    // int rssi = uBit.radio.getRSSI();
+    // DMESG("RSSI: %d", rssi);
+    // DMESG("MESSAGE FROM: %s", b.getBytes());
+    // PRINTFLOATMSG("MESSAGE RECVD AT", RadioTimer::radioTime);
     // recv();
 }
 
@@ -168,7 +181,7 @@ int main()
     RadioTimer::radioTimer = &uBit.timer;
 
     uint64_t t = uBit.timer.getTimeUs();
-    PRINTFLOATMSG("TIME uS", t);
+    // PRINTFLOATMSG("TIME uS", t);
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {
@@ -176,14 +189,14 @@ int main()
         val = (int)(val / 2);
     }
     name[6] = '\0';
-    DMESG("Hello, I'm %s", name);
+    // DMESG("Hello, I'm %s", name);
     uBit.radio.setGroup(5);
     uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
+    // recv();
+    // PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
 
-    PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
-
-    PRINTFLOATMSG("RECV START", uBit.systemTime());
+    // PRINTFLOATMSG("RECV START", uBit.systemTime());
 
     // sampler->start();
 

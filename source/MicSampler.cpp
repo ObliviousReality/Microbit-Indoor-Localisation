@@ -5,8 +5,8 @@
 MicSampler::MicSampler(DataSource &s, MicroBit *ubit) : source(s)
 {
     source.connect(*this);
-    DMESG("SAMPLER ONLINE");
-    PRINTFLOATMSG("SAMPLE RATE OF SAMPLER", source.getSampleRate());
+    // DMESG("SAMPLER ONLINE");
+    // PRINTFLOATMSG("SAMPLE RATE OF SAMPLER", source.getSampleRate());
     this->ubit = ubit;
 }
 
@@ -35,13 +35,18 @@ bool MicSampler::processFFT()
 void MicSampler::addSamples(int start, int end, ManagedBuffer b)
 {
     f->clearSamples();
-    int16_t *data = (int16_t *)&b[0];
+    int8_t *data = (int8_t *)&b[0];
     data = data + start;
     // DMESG("ADDING SAMPLE 1: %d", (int8_t)*data);
     int i;
     for (i = start; i < end; i++)
     {
-        this->f->addSample((int8_t)*data++);
+        int item = (int8_t)*data++;
+        if (item == 1 || item == 255 || item == 254)
+        {
+            item = 0;
+        }
+        this->f->addSample(item);
     }
     // DMESG("ADDING SAMPLE %d: %d", i, (int8_t)*data);
 }
@@ -85,7 +90,7 @@ int MicSampler::slidingWindow(ManagedBuffer b)
     int prevMag = 0;
     bool curFound = false;
     bool prevFound = false;
-    for (int i = 0; i < b.length() - SLIDINGWINDOWSIZE; i++)
+    for (int i = SLIDINGWINDOWSIZE; i < b.length() - SLIDINGWINDOWSIZE; i++)
     {
         this->addSamples(i, i + SLIDINGWINDOWSIZE, b);
         curFound = this->f->processReal();
@@ -121,38 +126,57 @@ int MicSampler::pullRequest()
         DMESG("MIC DISABLED, RESETTING");
         ubit->reset();
     }
-    PRINTFLOATMSG("PR AT", AudioTimer::audioTime -
-                               BUFFER_LENGTH_US); // roughly every 23 ms but does slightly vary.
-    time = AudioTimer::audioTime - BUFFER_LENGTH_US;
+    // PRINTFLOATMSG("PR AT", AudioTimer::audioTime -
+    //                            BUFFER_LENGTH_US); // roughly every 23 ms but does slightly vary.
+    long localtime = AudioTimer::audioTime - BUFFER_LENGTH_US;
     buffer = source.pull();
     aRecv = clock();
-    DMESG("BUF COUNTER: %d", this->bufCounter); 
-    buffers[this->bufCounter] = new AudioBuffer(buffer, time);
-    this->bufCounter++;
-    if (bufCounter >= BUFFER_BUFFER)
+    // DMESG("BUF COUNTER: %d", this->bufCounter);
+    if (this->doingAnother)
     {
-        bufCounter = 0;
-    }
-    if (terminating == 1)
-    {
+        TheBufferTwo = buffer;
+        TheBufferTimeTwo = localtime;
         this->stop();
+    }
+    else
+    {
+        // buffers[this->bufCounter] = new AudioBuffer(buffer, localtime);
+        // this->bufCounter++;
+        // if (bufCounter >= BUFFER_BUFFER)
+        // {
+        //     bufCounter = 0;
+        // }
+        if (terminating == 1)
+        {
+            DMESG("TERMINATING");
+            TheBufferTime = localtime;
+            TheBuffer = buffer;
+            // this->oneMore();
+            this->stop();
+        }
     }
     return DEVICE_OK;
 }
 
-bool MicSampler::processResult()
+bool MicSampler::processResult(long radioTime)
 {
     DMESG("PROCESS TIME");
     bool anyFound = false;
+    int sampleStartBuffer = 100;
     for (int i = 0; i < BUFFER_BUFFER; i++)
     {
-        this->addSamples(0, WINDOW_SIZE, buffers[i]->buffer);
-        bool a = this->f->processReal();
-        this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, buffers[i]->buffer);
-        bool b = this->f->processReal();
-        if (a || b)
+        if (buffers[i]->time > radioTime)
         {
-            anyFound = true;
+            if (sampleStartBuffer > i)
+                sampleStartBuffer = i;
+            this->addSamples(0, WINDOW_SIZE, buffers[i]->buffer);
+            bool a = this->f->processReal();
+            this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, buffers[i]->buffer);
+            bool b = this->f->processReal();
+            if (a || b)
+            {
+                anyFound = true;
+            }
         }
     }
 
@@ -162,7 +186,7 @@ bool MicSampler::processResult()
         fiber_sleep(10);
         return false;
     }
-    ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE * 2) + (2 * SLIDINGWINDOWSIZE));
+    ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE * 4) + (2 * SLIDINGWINDOWSIZE));
     int tempBufInd = 1;
     int16_t *bufferData = (int16_t *)&buffers[1]->buffer[0];
     for (int i = 0; i < (SAMPLE_SIZE * 4) + (2 * SLIDINGWINDOWSIZE); i++)
@@ -195,25 +219,103 @@ bool MicSampler::processResult()
         return false;
     }
 
-    // int estimatedEndSample = index + (CHIRPLENGTH_US / SAMPLE_LENGTH_US);
-
-    // this->addSamples(estimatedEndSample - 16, estimatedEndSample, fullBuffer);
-    // bool lastWindow = this->f->processReal();
-    // int lastWindowMag = this->f->getMag();
-
-    // this->addSamples(estimatedEndSample + 1, estimatedEndSample + 17, fullBuffer);
-    // bool nextWindow = this->f->processReal();
-    // int nextWindowMag = this->f->getMag();
-
+    ubit->log.logData("BUFFER", (index) / 256);
+    ubit->log.logData("SSB", sampleStartBuffer);
+    ubit->log.logData("BC", bufCounter);
     ubit->log.logData("SAMPLE", index);
     ubit->log.logData("RAW AUD", (int)buffers[1]->time);
     this->time = buffers[1]->time + (SAMPLE_LENGTH_US * index);
-    this->timeTakenUS = SAMPLE_LENGTH_US * index;
-    ubit->log.logData("ALT TIME", timeTakenUS);
-    // ubit->log.logData("lastWindow", lastWindow);
-    // ubit->log.logData("nextWindow", nextWindow);
     ubit->display.print("T");
     DMESG("RETURN TRUE");
     fiber_sleep(1);
+    return true;
+}
+
+bool MicSampler::processResult2(long radioTime)
+{
+    bool firstFound = false;
+    this->addSamples(0, WINDOW_SIZE, TheBuffer);
+    bool a = this->f->processReal();
+    this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, TheBuffer);
+    bool b = this->f->processReal();
+    if (a || b)
+    {
+        firstFound = true;
+    }
+    // bool secondFound = false;
+    // this->addSamples(0, WINDOW_SIZE, TheBufferTwo);
+    // a = this->f->processReal();
+    // this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, TheBufferTwo);
+    // b = this->f->processReal();
+    // if (a || b)
+    // {
+    //     secondFound = true;
+    // }
+    ManagedBuffer bufferGoingForwards;
+    if (firstFound)
+    {
+        bufferGoingForwards = TheBuffer;
+    }
+    // else if (secondFound)
+    // {
+    //     bufferGoingForwards = TheBufferTwo;
+    // }
+    else
+    {
+        DMESG("NOT FOUND");
+        fiber_sleep(1);
+        // ubit->reset();
+    }
+
+    ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE));
+    int8_t *bufferData = (int8_t *)&TheBuffer[0];
+    for (int i = 0; i < SLIDINGWINDOWSIZE - 1; i++)
+    {
+        fullBuffer.setByte(i, 0);
+    }
+    for (int i = SLIDINGWINDOWSIZE; i < TheBuffer.length() + SLIDINGWINDOWSIZE; i++)
+    {
+        // PRINTFLOAT(TheBuffer[i]);
+        // DMESG("%d", (int)bufferData);
+        int item = (int)*bufferData++;
+        DMESG("%d ", item);
+        if (item == 1 || item == 255 || item == 254)
+        {
+            item = 0;
+        }
+
+        fullBuffer.setByte(i, item);
+    }
+    for (int i = TheBuffer.length() + SLIDINGWINDOWSIZE;
+         i < (SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE); i++)
+    {
+        fullBuffer.setByte(i, 0);
+    }
+    int index = this->slidingWindow(fullBuffer) - SLIDINGWINDOWSIZE;
+    if (index < 0)
+    {
+        DMESG("NEGATIVE INDEX");
+        fiber_sleep(1);
+        ubit->reset();
+    }
+    int radioSample = (radioTime - TheBufferTime) / 90;
+    if (radioSample > index)
+    {
+        DMESG("CHIRP BEFORE RADIO");
+        fiber_sleep(1);
+        ubit->reset();
+    }
+    ubit->log.beginRow();
+
+    ubit->log.logData("FOUND", firstFound ? "True" : "False");
+    // ubit->log.logData("FOUND2", secondFound ? "True" : "False");
+    ubit->log.logData("SAMPLE", index);
+    ubit->log.logData("RADIO SAMPLE", radioSample);
+    ubit->log.logData("RAW AUD", (int)TheBufferTime);
+    ubit->log.logData("SDIST",
+                      (int)(((index - radioSample) * SAMPLE_LENGTH_US) * SPEEDOFSOUND_CMUS));
+    ubit->log.logData("SAMPLE DIFF", index - radioSample);
+    DMESG("INDEX: %d", index);
+    this->time = TheBufferTime + (SAMPLE_LENGTH_US * index);
     return true;
 }

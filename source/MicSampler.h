@@ -28,7 +28,9 @@ public:
     ~MicSampler();
     virtual int pullRequest();
 
-    bool processResult();
+    bool processResult(long radioTime);
+
+    bool processResult2(long radioTime);
 
     void start()
     {
@@ -39,6 +41,7 @@ public:
     {
         this->active = false;
         this->outcome = true;
+        this->doingAnother = false;
     }
 
     void terminate() { this->terminating = 1; }
@@ -47,8 +50,6 @@ public:
     ManagedBuffer getBuffer() { return this->buffer; }
     long getTime() { return this->time; }
 
-    int timeTakenUS = 0;
-
     bool foundResult() { return this->outcome; }
     clock_t aRecv = 0;
 
@@ -56,6 +57,8 @@ private:
     void addSamples(int start, int end, ManagedBuffer b);
     void binaryChop();
     int slidingWindow(ManagedBuffer b);
+
+    void oneMore() { this->doingAnother = true; }
 
     bool processFFT();
 
@@ -72,7 +75,11 @@ private:
 
     int bufCounter = 0;
     AudioBuffer **buffers = (AudioBuffer **)malloc(sizeof(AudioBuffer *) * BUFFER_BUFFER);
-
+    ManagedBuffer TheBuffer;
+    long TheBufferTime;
+    ManagedBuffer TheBufferTwo;
+    long TheBufferTimeTwo;
+    bool doingAnother = false;
     int terminating = 0;
 };
 

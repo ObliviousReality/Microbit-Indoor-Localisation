@@ -3,6 +3,7 @@
 
 namespace RadioTimer
 {
-long radioTime = 0;
+volatile long radioTime = 0;
 codal::Timer *radioTimer = nullptr;
+volatile bool pulseReceived = false;
 } // namespace RadioTimer
