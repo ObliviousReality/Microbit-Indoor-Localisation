@@ -20,6 +20,7 @@ private:
     kiss_fft_scalar FFTInput[WINDOW_SIZE];
 
     int magnitude = 0;
+    int magnitude5400 = 0;
 };
 
 #endif

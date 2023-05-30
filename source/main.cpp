@@ -22,15 +22,6 @@ const int MAXPROMPTS = 8;
 
 char name[7];
 
-long radioRecvTime = 0;
-long audioRecvTime = 0;
-
-clock_t rRecv;
-
-bool radioPulse = false;
-
-long time2point5;
-long time2point75;
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
@@ -48,18 +39,8 @@ void send()
     uBit.display.print("S");
     while (true)
     {
-        // long timeOne = uBit.timer.getTimeUs();
         uBit.radio.datagram.send(name);
-        // long timeTwo = uBit.timer.getTimeUs();
         playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS, 2000);
-        // long timeThree = uBit.timer.getTimeUs();
-        // fiber_sleep(20);
-        // playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS);
-        // uBit.sleep(500);
-        // uBit.reset();
-        // DMESG("%d %d %d %d %d %d %d %d %d", timeOne, timeTwo - timeOne, timeTwo,
-        //       time2point5 - timeTwo, time2point5, time2point75 - time2point5, time2point75,
-        //       timeThree - time2point75, timeThree);
     }
 }
 
@@ -90,8 +71,6 @@ void recv()
     sampler->start();
     uBit.display.print("R");
     long time = uBit.systemTime();
-    // PRINTFLOATMSG("LOOP START", time);
-    // radioRecvTime = uBit.systemTime();
     bool timedOut = false;
     bool processedAlready = false;
 
@@ -99,26 +78,19 @@ void recv()
     {
         if (RadioTimer::pulseReceived)
         {
-            // DMESG("LOOOOOOOOOOOOOOOOOOOOsP");
             sampler->terminate();
         }
         if (sampler->foundResult() && !processedAlready)
         {
             processedAlready = true;
-            // DMESG("SAMPLER HAS FINISHED");
-            // uBit.sleep(1000);
-            // DMESG("-");
-            // uBit.sleep(1000);
-            bool outcome = sampler->processResult2(RadioTimer::radioTime);
+            bool outcome = sampler->processResult(RadioTimer::radioTime);
             if (outcome)
             {
-                // DMESG("SUCCESS");
                 uBit.display.print("Y");
                 break;
             }
             else
             {
-                // DMESG("FAIL");
                 uBit.display.print("N");
                 fiber_sleep(300);
                 uBit.reset();
@@ -144,19 +116,9 @@ void test()
 
 static void radioReceive(MicroBitEvent)
 {
-    // radioRecvTime = uBit.systemTime();
-    // rRecv = clock();
-    if (radioPulse)
-    {
-        return;
-    }
-    radioPulse = true;
     PacketBuffer b = uBit.radio.datagram.recv();
-    // int rssi = uBit.radio.getRSSI();
-    // DMESG("RSSI: %d", rssi);
     // DMESG("MESSAGE FROM: %s", b.getBytes());
     // PRINTFLOATMSG("MESSAGE RECVD AT", RadioTimer::radioTime);
-    // recv();
 }
 
 void bee()
@@ -170,18 +132,11 @@ void bee()
 
 int main()
 {
-    // struct timeval t;
-    // gettimeofday(&t, NULL);
-    // PRINTFLOAT(t.tv_sec);
-    // PRINTFLOAT(t.tv_usec);
     uBit.init();
-    uBit.log.setTimeStamp(TimeStampFormat::Milliseconds);
-    // syncTimer = &uBit.timer;
+
     AudioTimer::setTimer(&uBit.timer);
     RadioTimer::radioTimer = &uBit.timer;
 
-    uint64_t t = uBit.timer.getTimeUs();
-    // PRINTFLOATMSG("TIME uS", t);
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {
@@ -189,28 +144,14 @@ int main()
         val = (int)(val / 2);
     }
     name[6] = '\0';
+
     // DMESG("Hello, I'm %s", name);
-    uBit.radio.setGroup(5);
-    uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
-    uBit.radio.enable();
+
+    // uBit.radio.setGroup(5);
+    // uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
+    // uBit.radio.enable();
     // recv();
-    // PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
 
-    // PRINTFLOATMSG("RECV START", uBit.systemTime());
-
-    // sampler->start();
-
-    // if (uBit.audio.mic->isEnabled())
-    // {
-    //     DMESG("MIC ENABLED");
-    // }
-    // else
-    // {
-    //     DMESG("MIC NOT ENABLED");
-    //     fiber_sleep(10);
-    //     uBit.reset();
-    // }
-    // uBit.audio.mic->enable();
     while (true)
     {
         // fiber_sleep(20);

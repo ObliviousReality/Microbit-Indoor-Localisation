@@ -6,21 +6,6 @@
 #ifndef MIC_SAMPLER_H
 #define MIC_SAMPLER_H
 
-struct AudioBuffer
-{
-    AudioBuffer(ManagedBuffer b, long t)
-    {
-        this->buffer = b;
-        this->time = t;
-    }
-    ManagedBuffer buffer;
-    long time;
-    int mag = 0;
-    bool found = false;
-    // int *subMags = (int *)malloc(sizeof(int) * SPLIT_NUMBER);
-    // bool *subFounds = (bool *)malloc(sizeof(bool) * SPLIT_NUMBER);
-};
-
 class MicSampler : public DataSink
 {
 public:
@@ -29,8 +14,6 @@ public:
     virtual int pullRequest();
 
     bool processResult(long radioTime);
-
-    bool processResult2(long radioTime);
 
     void start()
     {
@@ -41,24 +24,18 @@ public:
     {
         this->active = false;
         this->outcome = true;
-        this->doingAnother = false;
     }
 
     void terminate() { this->terminating = 1; }
 
-    void goAgain() { this->outcome = false; }
     ManagedBuffer getBuffer() { return this->buffer; }
     long getTime() { return this->time; }
 
     bool foundResult() { return this->outcome; }
-    clock_t aRecv = 0;
 
 private:
     void addSamples(int start, int end, ManagedBuffer b);
-    void binaryChop();
     int slidingWindow(ManagedBuffer b);
-
-    void oneMore() { this->doingAnother = true; }
 
     bool processFFT();
 
@@ -71,15 +48,8 @@ private:
     FFT *f = new FFT();
     bool outcome = false;
 
-    int lowerBound, upperBound;
-
-    int bufCounter = 0;
-    AudioBuffer **buffers = (AudioBuffer **)malloc(sizeof(AudioBuffer *) * BUFFER_BUFFER);
     ManagedBuffer TheBuffer;
     long TheBufferTime;
-    ManagedBuffer TheBufferTwo;
-    long TheBufferTimeTwo;
-    bool doingAnother = false;
     int terminating = 0;
 };
 
