@@ -35,7 +35,7 @@ public:
 
 private:
     void addSamples(int start, int end, ManagedBuffer b);
-    int slidingWindow(ManagedBuffer b);
+    int slidingWindow(ManagedBuffer b, int startPoint);
 
     bool processFFT();
 

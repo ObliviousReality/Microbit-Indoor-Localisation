@@ -149,7 +149,7 @@ int main()
     uBit.radio.setGroup(5);
     // uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
     uBit.radio.enable();
-    // recv();
+    recv();
 
     while (true)
     {

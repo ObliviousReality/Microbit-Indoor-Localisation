@@ -9,7 +9,7 @@ class FFT
 public:
     FFT();
     bool processReal();
-    void addSample(float s) { this->FFTInput[sampleNumber++] = s; }
+    void addSample(int8_t s) { this->FFTInput[sampleNumber++] = s; }
     void clearSamples() { this->sampleNumber = 0; }
     int getSampleNumber() { return this->sampleNumber; }
     int getMag() { return this->magnitude; }
