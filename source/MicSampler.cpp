@@ -101,8 +101,12 @@ bool MicSampler::processResult(long radioTime)
     bool firstFound = false;
     this->addSamples(0, WINDOW_SIZE, TheBuffer);
     bool a = this->f->processReal();
+    PRINTFLOATMSG("FFT1 MAG2.7", this->f->getMag());
+    PRINTFLOATMSG("FFT1 MAG5.4", this->f->getMagTwo());
     this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, TheBuffer);
     bool b = this->f->processReal();
+    PRINTFLOATMSG("FFT2 MAG2.7", this->f->getMag());
+    PRINTFLOATMSG("FFT2 MAG5.4", this->f->getMagTwo());
     if (a || b)
     {
         firstFound = true;
@@ -119,31 +123,31 @@ bool MicSampler::processResult(long radioTime)
         // ubit->reset();
     }
 
-    ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE));
-    int8_t *bufferData = (int8_t *)&TheBuffer[0];
-    for (int i = 0; i < SLIDINGWINDOWSIZE - 1; i++)
-    {
-        fullBuffer.setByte(i, 0);
-    }
-    for (int i = SLIDINGWINDOWSIZE; i < TheBuffer.length() + SLIDINGWINDOWSIZE; i++)
-    {
-        // PRINTFLOAT(TheBuffer[i]);
-        // DMESG("%d", (int)bufferData);
-        int item = (int)*bufferData++;
-        DMESG("%d ", item);
-        if (item == 1 || item == 255 || item == 254)
-        {
-            item = 0;
-        }
+    // ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE));
+    // int8_t *bufferData = (int8_t *)&TheBuffer[0];
+    // for (int i = 0; i < SLIDINGWINDOWSIZE - 1; i++)
+    // {
+    //     fullBuffer.setByte(i, 0);
+    // }
+    // for (int i = SLIDINGWINDOWSIZE; i < TheBuffer.length() + SLIDINGWINDOWSIZE; i++)
+    // {
+    //     // PRINTFLOAT(TheBuffer[i]);
+    //     // DMESG("%d", (int)bufferData);
+    //     int item = (int)*bufferData++;
+    //     DMESG("%d ", item);
+    //     if (item == 1 || item == 255 || item == 254)
+    //     {
+    //         item = 0;
+    //     }
 
-        fullBuffer.setByte(i, item);
-    }
-    for (int i = TheBuffer.length() + SLIDINGWINDOWSIZE;
-         i < (SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE); i++)
-    {
-        fullBuffer.setByte(i, 0);
-    }
-    int index = this->slidingWindow(fullBuffer) - SLIDINGWINDOWSIZE;
+    //     fullBuffer.setByte(i, item);
+    // }
+    // for (int i = TheBuffer.length() + SLIDINGWINDOWSIZE;
+    //      i < (SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE); i++)
+    // {
+    //     fullBuffer.setByte(i, 0);
+    // }
+    int index = this->slidingWindow(TheBuffer);
     if (index < 0)
     {
         DMESG("NEGATIVE INDEX");

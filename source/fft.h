@@ -13,6 +13,7 @@ public:
     void clearSamples() { this->sampleNumber = 0; }
     int getSampleNumber() { return this->sampleNumber; }
     int getMag() { return this->magnitude; }
+    int getMagTwo() { return this->magnitude5400; }
 
 private:
     int sampleNumber = 0;

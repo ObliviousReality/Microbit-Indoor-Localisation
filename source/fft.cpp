@@ -47,6 +47,10 @@ bool FFT::processReal()
         if (mag[ind] < MAG_THRESHOLD)
         {
             DMESG("MAG TOO LOW");
+            if (mag[ind2] < MAG_THRESHOLD)
+            {
+                DMESG("but mag 2 isn't...");
+            }
             return false;
         }
         return true;

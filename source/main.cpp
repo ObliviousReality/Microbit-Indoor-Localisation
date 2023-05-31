@@ -71,7 +71,6 @@ void recv()
     sampler->start();
     uBit.display.print("R");
     long time = uBit.systemTime();
-    bool timedOut = false;
     bool processedAlready = false;
 
     while (true)
@@ -147,9 +146,9 @@ int main()
 
     // DMESG("Hello, I'm %s", name);
 
-    // uBit.radio.setGroup(5);
+    uBit.radio.setGroup(5);
     // uBit.messageBus.listen(DEVICE_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM, radioReceive);
-    // uBit.radio.enable();
+    uBit.radio.enable();
     // recv();
 
     while (true)
