@@ -13,7 +13,6 @@ static void radioReceive(MicroBitEvent);
 void recv();
 
 MicroBit uBit;
-// SoundOutputPin *pin = &uBit.audio.virtualOutputPin;
 Pin *pin = &uBit.io.speaker;
 
 char prompts[] = {'<', 'S', '<', ' ', '>', 'R', '>', ' '};
@@ -22,12 +21,15 @@ const int MAXPROMPTS = 8;
 
 char name[7];
 
+long audioSendTime = 0;
+
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
         loT = hiT;
     pin->setAnalogValue(128);
     pin->setAnalogPeriodUs(1000000 / f);
+    audioSendTime = uBit.timer.getTimeUs();
     fiber_sleep(hiT);
     pin->setAnalogValue(0);
     fiber_sleep(loT);
@@ -41,6 +43,7 @@ void send()
     {
         uBit.radio.datagram.send(name);
         playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS, 2000);
+        // DMESG("SEND TIME: %d", audioSendTime - RadioTimer::radioSendTime);
     }
 }
 
@@ -61,18 +64,21 @@ void distanceCalculation(long samplerTime)
     uBit.log.logData("DISTANCE (cm?)", (int)(distance));
     uBit.log.endRow();
     uBit.display.print("Y");
-    uBit.sleep(300);
-    uBit.reset();
+    // uBit.sleep(300);
+    // uBit.reset();
+    recv();
 }
 
 void recv()
 {
+    RadioTimer::pulseReceived = false;
+
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel(), &uBit);
     sampler->start();
     uBit.display.print("R");
     long time = uBit.systemTime();
     bool processedAlready = false;
-
+    bool outcome;
     while (true)
     {
         if (RadioTimer::pulseReceived)
@@ -82,18 +88,8 @@ void recv()
         if (sampler->foundResult() && !processedAlready)
         {
             processedAlready = true;
-            bool outcome = sampler->processResult(RadioTimer::radioTime);
-            if (outcome)
-            {
-                uBit.display.print("Y");
-                break;
-            }
-            else
-            {
-                uBit.display.print("N");
-                fiber_sleep(300);
-                uBit.reset();
-            }
+            outcome = sampler->processResult(RadioTimer::radioTime);
+            break;
         }
         if (uBit.systemTime() - time > RECVTIMEOUT)
         {
@@ -101,7 +97,18 @@ void recv()
         }
         fiber_sleep(1);
     }
-    distanceCalculation(sampler->getTime());
+    if (outcome)
+    {
+        uBit.display.print("Y");
+        distanceCalculation(sampler->getTime());
+    }
+    else
+    {
+        uBit.display.print("N");
+        fiber_sleep(1);
+        // uBit.reset();
+        recv();
+    }
 }
 
 void test()

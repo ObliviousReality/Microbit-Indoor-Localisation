@@ -19,6 +19,7 @@ public:
     {
         this->active = true;
         this->outcome = false;
+        this->terminating = 0;
     }
     void stop()
     {
@@ -51,6 +52,8 @@ private:
     ManagedBuffer TheBuffer;
     long TheBufferTime;
     int terminating = 0;
+
+    int prevMag = 0;
 };
 
 #endif

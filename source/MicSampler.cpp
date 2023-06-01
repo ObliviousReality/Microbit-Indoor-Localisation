@@ -33,8 +33,8 @@ bool MicSampler::processFFT()
 void MicSampler::addSamples(int start, int end, ManagedBuffer b)
 {
     f->clearSamples();
-    int8_t *data = (int8_t *)&b[0];
-    data = data + start;
+    int8_t *data = (int8_t *)&b[start];
+    // data = data + start;
     int i;
     for (i = start; i < end; i++)
     {
@@ -48,7 +48,11 @@ int MicSampler::slidingWindow(ManagedBuffer b, int startPoint = 0)
     {
         this->addSamples(i, i + SLIDINGWINDOWSIZE, b);
         if (this->f->processReal())
+        {
+            DMESG("%d,%d, T", this->f->getMag(), this->f->frequency);
             return i;
+        }
+        DMESG("%d,%d, F", this->f->getMag(), this->f->frequency);
     }
     return -1;
 }
@@ -73,8 +77,9 @@ int MicSampler::pullRequest()
         TheBuffer = buffer;
         // this->oneMore();
         this->stop();
+        return DEVICE_OK;
     }
-
+    prevMag = this->f->getMag();
     return DEVICE_OK;
 }
 
@@ -106,10 +111,17 @@ bool MicSampler::processResult(long radioTime)
     }
     int radioSample = (radioTime - TheBufferTime) / 90;
 
+    if (radioSample > 256 - SLIDINGWINDOWSIZE || radioSample < 0)
+    {
+        DMESG("RADIO SAMPLE WRONG");
+        fiber_sleep(1);
+        return false;
+    }
+
     int altSample = -1;
-    int8_t *bufferData = (int8_t *)&TheBuffer[0];
-    bufferData = bufferData + radioSample;
-    for (int i = radioSample; i < TheBuffer.length(); i++)
+    int8_t *bufferData = (int8_t *)&TheBuffer[radioSample + 1];
+    // bufferData = bufferData + radioSample;
+    for (int i = radioSample + 1; i < TheBuffer.length(); i++)
     {
         int item = (int)*bufferData++;
         // DMESG("%d", item);
@@ -119,7 +131,7 @@ bool MicSampler::processResult(long radioTime)
             break;
         }
     }
-    int index = this->slidingWindow(TheBuffer, radioSample);
+    int index = this->slidingWindow(TheBuffer, radioSample + 1);
     DMESG("--");
     bufferData = (int8_t *)&TheBuffer[0];
     for (int i = 0; i < TheBuffer.length(); i++)
@@ -141,42 +153,21 @@ bool MicSampler::processResult(long radioTime)
         DMESG("%d %d", item, val);
     }
     DMESG("--");
-    // ManagedBuffer fullBuffer = ManagedBuffer((SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE));
-    // for (int i = 0; i < SLIDINGWINDOWSIZE - 1; i++)
-    // {
-    //     fullBuffer.setByte(i, 0);
-    // }
-    // for (int i = SLIDINGWINDOWSIZE; i < TheBuffer.length() + SLIDINGWINDOWSIZE; i++)
-    // {
-    //     // PRINTFLOAT(TheBuffer[i]);
-    //     // DMESG("%d", (int)bufferData);
-    //     int item = (int)*bufferData++;
-    //     DMESG("%d ", item);
-    //     if (item == 1 || item == 255 || item == 254)
-    //     {
-    //         item = 0;
-    //     }
-
-    //     fullBuffer.setByte(i, item);
-    // }
-    // for (int i = TheBuffer.length() + SLIDINGWINDOWSIZE;
-    //      i < (SAMPLE_SIZE) + (2 * SLIDINGWINDOWSIZE); i++)
-    // {
-    //     fullBuffer.setByte(i, 0);
-    // }
     DMESG("RADIOSAMPLE: %d", radioSample);
     if (radioSample > index && index >= 0)
     {
         DMESGF("CHIRP BEFORE RADIO");
         fiber_sleep(1);
-        // index = this->slidingWindow(TheBuffer, index);
-        ubit->reset();
+        index = this->slidingWindow(TheBuffer, index + 1);
+        // ubit->reset();
+        return false;
     }
     if (index < 0)
     {
         DMESGF("NEGATIVE INDEX: %d", index);
         fiber_sleep(1);
-        ubit->reset();
+        // ubit->reset();
+        return false;
     }
     ubit->log.beginRow();
 

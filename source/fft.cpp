@@ -38,6 +38,8 @@ bool FFT::processReal()
 
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
+    this->frequency = freq;
+    DMESG("BIN WIDTH: %d", (int)(freq - (rate * (index))));
     int ind = 2700 / rate;
     this->magnitude = mag[ind];
     int ind2 = 5400 / rate;

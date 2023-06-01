@@ -15,6 +15,8 @@ public:
     int getMag() { return this->magnitude; }
     int getMagTwo() { return this->magnitude5400; }
 
+    int frequency = 0;
+
 private:
     int sampleNumber = 0;
 
