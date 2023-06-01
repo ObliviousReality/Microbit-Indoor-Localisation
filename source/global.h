@@ -2,6 +2,7 @@
 
 #define RAWFLOAT(f) (int)f, abs((int)(f * 1000.0f - ((int)f * 1000.0)))
 #define PRINTFLOAT(f) DMESG("%d.%d", RAWFLOAT(f))
+#define PRINTTWOFLOATMSG(msg, f1, f2) DMESG("%s: %d.%d|%d.%d", msg, RAWFLOAT(f1), RAWFLOAT(f2))
 #define PRINTFLOATMSG(msg, f) DMESG("%s: %d.%d", msg, RAWFLOAT(f))
 #define PRINTFOURFLOAT(f1, f2, f3, f4)                                                             \
     DMESG("%d.%d\t%d.%d\t%d.%d\t%d.%d", RAWFLOAT(f1), RAWFLOAT(f2), RAWFLOAT(f3), RAWFLOAT(f4))
@@ -15,7 +16,7 @@
     DMESG("BUFFER %d: M: %d\tF: %s T: %d", b->index, b->mag, (b->found ? "true " : "false"),       \
           b->time)
 
-#define SAMPLE_SIZE 256
+#define BUFFER_SIZE 256
 
 #define WINDOW_SIZE 128
 
@@ -39,9 +40,9 @@
 
 #define BUFFER_LENGTH_MS 23
 
-#define BUFFER_LENGTH_US 23000
-
 #define SAMPLE_LENGTH_US 90
+
+#define BUFFER_LENGTH_US SAMPLE_LENGTH_US * BUFFER_SIZE
 
 #define APPROACH 1
 
@@ -50,3 +51,5 @@
 #define CHIRPLENGTH_MS 20
 
 #define CHIRPLENGTH_US 50000
+
+#define MAG_THRESHOLD 15

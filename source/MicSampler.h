@@ -25,6 +25,8 @@ public:
     {
         this->active = false;
         this->outcome = true;
+        this->doAnother = false;
+        this->terminating = 0;
     }
 
     void terminate() { this->terminating = 1; }
@@ -38,6 +40,8 @@ private:
     void addSamples(int start, int end, ManagedBuffer b);
     int slidingWindow(ManagedBuffer b, int startPoint);
 
+    void oneMore() { doAnother = true; }
+
     bool processFFT();
 
     MicroBit *ubit;
@@ -48,6 +52,8 @@ private:
     ManagedBuffer buffer;
     FFT *f = new FFT();
     bool outcome = false;
+
+    bool doAnother = false;
 
     ManagedBuffer TheBuffer;
     long TheBufferTime;

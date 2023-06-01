@@ -72,7 +72,7 @@ void distanceCalculation(long samplerTime)
 void recv()
 {
     RadioTimer::pulseReceived = false;
-
+    uBit.radio.datagram.send("READY");
     MicSampler *sampler = new MicSampler(*uBit.audio.splitter->createChannel(), &uBit);
     sampler->start();
     uBit.display.print("R");
@@ -87,6 +87,8 @@ void recv()
         }
         if (sampler->foundResult() && !processedAlready)
         {
+            DMESG("PROCESSING");
+            fiber_sleep(1);
             processedAlready = true;
             outcome = sampler->processResult(RadioTimer::radioTime);
             break;
@@ -106,7 +108,7 @@ void recv()
     {
         uBit.display.print("N");
         fiber_sleep(1);
-        // uBit.reset();
+        uBit.reset();
         recv();
     }
 }

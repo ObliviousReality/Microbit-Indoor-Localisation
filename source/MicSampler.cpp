@@ -38,7 +38,7 @@ void MicSampler::addSamples(int start, int end, ManagedBuffer b)
     int i;
     for (i = start; i < end; i++)
     {
-        this->f->addSample(*data++);
+        this->f->addSample(abs(*data++));
     }
 }
 
@@ -49,10 +49,10 @@ int MicSampler::slidingWindow(ManagedBuffer b, int startPoint = 0)
         this->addSamples(i, i + SLIDINGWINDOWSIZE, b);
         if (this->f->processReal())
         {
-            DMESG("%d,%d, T", this->f->getMag(), this->f->frequency);
+            // PRINTTWOFLOATMSG("T", this->f->getMag(), this->f->frequency);
             return i;
         }
-        DMESG("%d,%d, F", this->f->getMag(), this->f->frequency);
+        // PRINTTWOFLOATMSG("F", this->f->getMag(), this->f->frequency);
     }
     return -1;
 }
@@ -70,13 +70,28 @@ int MicSampler::pullRequest()
     }
     long localtime = AudioTimer::audioTime - BUFFER_LENGTH_US;
     buffer = source.pull();
+    if (doAnother)
+    {
+        // DMESG("DOING ANOTHER");
+        ManagedBuffer newBuffer = ManagedBuffer(BUFFER_SIZE * 2);
+        for (int i = 0; i < BUFFER_SIZE; i++)
+        {
+            newBuffer.setByte(i, TheBuffer[i]);
+        }
+        for (int i = BUFFER_SIZE; i < BUFFER_SIZE * 2; i++)
+        {
+            newBuffer.setByte(i, buffer[i - BUFFER_SIZE]);
+        }
+        TheBuffer = newBuffer;
+        this->stop();
+    }
     if (terminating == 1)
     {
         // DMESG("TERMINATING");
         TheBufferTime = localtime;
         TheBuffer = buffer;
-        // this->oneMore();
-        this->stop();
+        this->oneMore();
+        // this->stop();
         return DEVICE_OK;
     }
     prevMag = this->f->getMag();
@@ -85,12 +100,14 @@ int MicSampler::pullRequest()
 
 bool MicSampler::processResult(long radioTime)
 {
+    // DMESG("PREV MAG %d", prevMag);
+    ubit->sleep(1);
     bool firstFound = false;
     this->addSamples(0, WINDOW_SIZE, TheBuffer);
     bool a = this->f->processReal();
     // PRINTFLOATMSG("FFT1 MAG2.7", this->f->getMag());
     // PRINTFLOATMSG("FFT1 MAG5.4", this->f->getMagTwo());
-    this->addSamples(WINDOW_SIZE, SAMPLE_SIZE, TheBuffer);
+    this->addSamples(WINDOW_SIZE, BUFFER_SIZE, TheBuffer);
     bool b = this->f->processReal();
     // PRINTFLOATMSG("FFT2 MAG2.7", this->f->getMag());
     // PRINTFLOATMSG("FFT2 MAG5.4", this->f->getMagTwo());
@@ -98,26 +115,22 @@ bool MicSampler::processResult(long radioTime)
     {
         firstFound = true;
     }
-    ManagedBuffer bufferGoingForwards;
-    if (firstFound)
-    {
-        bufferGoingForwards = TheBuffer;
-    }
     else
     {
         DMESG("NOT FOUND");
         fiber_sleep(1);
         // ubit->reset();
     }
+    // DMESG("FOUND CHECK");
+    // fiber_sleep(1);
     int radioSample = (radioTime - TheBufferTime) / 90;
 
-    if (radioSample > 256 - SLIDINGWINDOWSIZE || radioSample < 0)
+    if (radioSample > TheBuffer.length() || radioSample < 0)
     {
-        DMESG("RADIO SAMPLE WRONG");
+        DMESG("RADIO SAMPLE WRONG: %d", radioSample);
         fiber_sleep(1);
         return false;
     }
-
     int altSample = -1;
     int8_t *bufferData = (int8_t *)&TheBuffer[radioSample + 1];
     // bufferData = bufferData + radioSample;
@@ -131,8 +144,9 @@ bool MicSampler::processResult(long radioTime)
             break;
         }
     }
+
     int index = this->slidingWindow(TheBuffer, radioSample + 1);
-    DMESG("--");
+    // DMESG("--");
     bufferData = (int8_t *)&TheBuffer[0];
     for (int i = 0; i < TheBuffer.length(); i++)
     {
@@ -150,9 +164,9 @@ bool MicSampler::processResult(long radioTime)
         {
             val = 5;
         }
-        DMESG("%d %d", item, val);
+        // DMESG("%d,%d", TheBuffer[i] - 128, val);
     }
-    DMESG("--");
+    // DMESG("--");
     DMESG("RADIOSAMPLE: %d", radioSample);
     if (radioSample > index && index >= 0)
     {

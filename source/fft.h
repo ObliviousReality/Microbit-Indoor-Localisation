@@ -8,7 +8,7 @@ class FFT
 {
 public:
     FFT();
-    bool processReal();
+    bool processReal(int MagThreshold = MAG_THRESHOLD);
     void addSample(int8_t s) { this->FFTInput[sampleNumber++] = s; }
     void clearSamples() { this->sampleNumber = 0; }
     int getSampleNumber() { return this->sampleNumber; }
@@ -22,7 +22,7 @@ private:
 
     kiss_fft_scalar FFTInput[WINDOW_SIZE];
 
-    int magnitude = 0;
+    float magnitude = 0;
     int magnitude5400 = 0;
 };
 

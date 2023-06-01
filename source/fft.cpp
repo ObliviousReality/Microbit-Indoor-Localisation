@@ -1,22 +1,20 @@
 #include "MicroBit.h"
 #include "fft.h"
 
-#define MAG_THRESHOLD 20
-
 FFT::FFT() {}
 
-bool FFT::processReal()
+bool FFT::processReal(int MagThreshold)
 {
     kiss_fftr_cfg cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
     kiss_fft_cpx out[sampleNumber];
     kiss_fftr(cfgr, this->FFTInput, out);
     free(cfgr);
 
-    double mag[sampleNumber / 2];
+    float mag[sampleNumber / 2];
     for (int i = 0; i < sampleNumber / 2; i++)
     {
         kiss_fft_cpx val = out[i];
-        mag[i] = (val.r * val.r) + (val.i * val.i);
+        mag[i] = (((val.r * val.r) + (val.i * val.i)));
     }
 
     double max = 0;
@@ -39,7 +37,7 @@ bool FFT::processReal()
     float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
     this->frequency = freq;
-    DMESG("BIN WIDTH: %d", (int)(freq - (rate * (index))));
+    // DMESG("BIN WIDTH: %d", (int)(freq - (rate * (index))));
     int ind = 2700 / rate;
     this->magnitude = mag[ind];
     int ind2 = 5400 / rate;
