@@ -23,6 +23,11 @@ char name[7];
 
 long audioSendTime = 0;
 
+float distances[100];
+int dPointer = 0;
+
+float avgDistance = 0;
+
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
@@ -42,7 +47,7 @@ void send()
     while (true)
     {
         uBit.radio.datagram.send(name);
-        playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS, 2000);
+        playTone(TRANSMIT_FREQUENCY, CHIRPLENGTH_MS, 500);
         // DMESG("SEND TIME: %d", audioSendTime - RadioTimer::radioSendTime);
     }
 }
@@ -59,13 +64,34 @@ void distanceCalculation(long samplerTime)
 
     double distance = SPEEDOFSOUND_CMUS * timeDiff_US;
     // uBit.display.print(distance);
-    PRINTFLOATMSG("TIME DIFFERENCE", timeDiff_US);
-    PRINTFLOATMSG("DISTANCE", distance);
+    // PRINTFLOATMSG("TIME DIFFERENCE", timeDiff_US);
+    // PRINTFLOATMSG("DISTANCE", distance);
     uBit.log.logData("DISTANCE (cm?)", (int)(distance));
+    distances[dPointer++] = distance;
+    if (dPointer > 100)
+    {
+        dPointer = 0;
+    }
+    double tot = 0;
+    int count = 0;
+    for (int i = 0; i < 100; i++)
+    {
+        if (distances[i])
+        {
+            tot = tot + distances[i];
+            count++;
+        }
+    }
+    avgDistance = tot / count;
+    uBit.log.logData("AVERAGE (cm?)", (int)(avgDistance));
+
     uBit.log.endRow();
     uBit.display.print("Y");
     // uBit.sleep(300);
     // uBit.reset();
+    long timeRightNow = uBit.timer.getTimeUs();
+    DMESG("TIME: %d", timeRightNow - RadioTimer::radioTime);
+    fiber_sleep(1);
     recv();
 }
 
@@ -87,8 +113,8 @@ void recv()
         }
         if (sampler->foundResult() && !processedAlready)
         {
-            DMESG("PROCESSING");
-            fiber_sleep(1);
+            // DMESG("PROCESSING");
+            // fiber_sleep(1);
             processedAlready = true;
             outcome = sampler->processResult(RadioTimer::radioTime);
             break;
@@ -108,7 +134,7 @@ void recv()
     {
         uBit.display.print("N");
         fiber_sleep(1);
-        uBit.reset();
+        // uBit.reset();
         recv();
     }
 }

@@ -117,7 +117,7 @@ bool MicSampler::processResult(long radioTime)
     }
     else
     {
-        DMESG("NOT FOUND");
+        // DMESG("NOT FOUND");
         fiber_sleep(1);
         // ubit->reset();
     }
@@ -127,7 +127,7 @@ bool MicSampler::processResult(long radioTime)
 
     if (radioSample > TheBuffer.length() || radioSample < 0)
     {
-        DMESG("RADIO SAMPLE WRONG: %d", radioSample);
+        // DMESG("RADIO SAMPLE WRONG: %d", radioSample);
         fiber_sleep(1);
         return false;
     }
@@ -145,8 +145,14 @@ bool MicSampler::processResult(long radioTime)
         }
     }
 
-    int index = this->slidingWindow(TheBuffer, radioSample + 1);
+    int index = this->slidingWindow(TheBuffer, radioSample);
     // DMESG("--");
+    if ((index == radioSample) || (index == radioSample + 1))
+    {
+        // DMESG("TOO CLOSE");
+        fiber_sleep(1);
+        return false;
+    }
     bufferData = (int8_t *)&TheBuffer[0];
     for (int i = 0; i < TheBuffer.length(); i++)
     {
@@ -167,10 +173,10 @@ bool MicSampler::processResult(long radioTime)
         // DMESG("%d,%d", TheBuffer[i] - 128, val);
     }
     // DMESG("--");
-    DMESG("RADIOSAMPLE: %d", radioSample);
+    // DMESG("RADIOSAMPLE: %d", radioSample);
     if (radioSample > index && index >= 0)
     {
-        DMESGF("CHIRP BEFORE RADIO");
+        // DMESGF("CHIRP BEFORE RADIO");
         fiber_sleep(1);
         index = this->slidingWindow(TheBuffer, index + 1);
         // ubit->reset();
@@ -178,7 +184,7 @@ bool MicSampler::processResult(long radioTime)
     }
     if (index < 0)
     {
-        DMESGF("NEGATIVE INDEX: %d", index);
+        // DMESGF("NEGATIVE INDEX: %d", index);
         fiber_sleep(1);
         // ubit->reset();
         return false;
@@ -193,7 +199,7 @@ bool MicSampler::processResult(long radioTime)
                       (int)(((index - radioSample) * SAMPLE_LENGTH_US) * SPEEDOFSOUND_CMUS));
     ubit->log.logData("SAMPLE DIFF", index - radioSample);
     ubit->log.logData("ALT SAMPLE", altSample - radioSample);
-    DMESG("INDEX: %d", index);
+    // DMESG("INDEX: %d", index);
     this->time = TheBufferTime + (SAMPLE_LENGTH_US * index);
     return true;
 }
