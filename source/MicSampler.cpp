@@ -44,13 +44,40 @@ void MicSampler::addSamples(int start, int end, ManagedBuffer b)
 
 int MicSampler::slidingWindow(ManagedBuffer b, int startPoint = 0)
 {
+    int firstSeenAt = -1;
+    int count = 0;
+    int found = 0;
+    int N = 10;
+    int M = 5;
     for (int i = startPoint; i < b.length() - SLIDINGWINDOWSIZE; i++)
     {
         this->addSamples(i, i + SLIDINGWINDOWSIZE, b);
-        if (this->f->processReal())
+        bool b = this->f->processReal();
+        if (b && !count)
         {
-            // PRINTTWOFLOATMSG("T", this->f->getMag(), this->f->frequency);
-            return i;
+            count = 10;
+            found = 1;
+            firstSeenAt = i;
+            DMESG("SETTING COUNT");
+            fiber_sleep(1);
+        }
+        else if (count)
+        {
+            if (b)
+                found++;
+            count--;
+            if (count == 0)
+            {
+                if (found >= M)
+                    return firstSeenAt;
+                else
+                {
+                    DMESG("RESETTING COUNT");
+                    fiber_sleep(1);
+                    found = 0;
+                    firstSeenAt = -1;
+                }
+            }
         }
         // PRINTTWOFLOATMSG("F", this->f->getMag(), this->f->frequency);
     }

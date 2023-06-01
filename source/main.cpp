@@ -119,10 +119,10 @@ void recv()
             outcome = sampler->processResult(RadioTimer::radioTime);
             break;
         }
-        if (uBit.systemTime() - time > RECVTIMEOUT)
-        {
-            uBit.reset();
-        }
+        // if (uBit.systemTime() - time > RECVTIMEOUT)
+        // {
+        //     uBit.reset();
+        // }
         fiber_sleep(1);
     }
     if (outcome)
