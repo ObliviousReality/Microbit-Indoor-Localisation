@@ -131,17 +131,19 @@ int MicSampler::pullRequest()
         if (bufCounter == 8)
             TheBufferTime = localtime;
         // TheBuffer = buffer;
-        int ctr = 0;
-        for (int i = 256 * (8 - bufCounter); i < buffer.length(); i++)
+        if (bufCounter != 0)
         {
-            TheBuffer[i] = buffer[ctr++];
-        }
-        bufCounter--;
-        // this->oneMore();
-        if (bufCounter == 0)
-        {
-            bufCounter = 8;
-            this->stop();
+            int ctr = 0;
+            for (int i = 256 * (8 - bufCounter); i < buffer.length(); i++)
+            {
+                TheBuffer[i] = buffer[ctr++];
+            }
+            bufCounter--;
+            // this->oneMore();
+            if (bufCounter == 0)
+            {
+                this->stop();
+            }
         }
         return DEVICE_OK;
     }
@@ -171,86 +173,86 @@ bool MicSampler::processResult(long radioTime)
         fiber_sleep(1);
         // ubit->reset();
     }
-    // DMESG("FOUND CHECK");
-    // fiber_sleep(1);
-    int radioSample = (radioTime - TheBufferTime) / 90;
+    // // DMESG("FOUND CHECK");
+    // // fiber_sleep(1);
+    // int radioSample = (radioTime - TheBufferTime) / 90;
 
-    if (radioSample > TheBuffer.length() || radioSample < 0)
-    {
-        DMESG("RADIO SAMPLE WRONG: %d", radioSample);
-        fiber_sleep(1);
-        return false;
-    }
-    int altSample = -1;
-    int8_t *bufferData = (int8_t *)&TheBuffer[radioSample + 1];
-    // bufferData = bufferData + radioSample;
-    for (int i = radioSample + 1; i < TheBuffer.length(); i++)
-    {
-        int item = (int)*bufferData++;
-        // DMESG("%d", item);
-        if (abs(item) > 1)
-        {
-            altSample = i;
-            break;
-        }
-    }
-
-    int index = this->slidingWindow(TheBuffer, radioSample);
-    // DMESG("--");
-    // if ((index == radioSample) || (index == radioSample + 1))
+    // if (radioSample > TheBuffer.length() || radioSample < 0)
     // {
-    //     DMESG("TOO CLOSE");
+    //     DMESG("RADIO SAMPLE WRONG: %d", radioSample);
     //     fiber_sleep(1);
     //     return false;
     // }
-    bufferData = (int8_t *)&TheBuffer[0];
-    for (int i = 0; i < TheBuffer.length(); i++)
-    {
-        int item = (int)*bufferData++;
-        int val = 0;
-        if (index == i)
-        {
-            val = -3;
-        }
-        if (altSample == i)
-        {
-            val = 4;
-        }
-        if (radioSample == i)
-        {
-            val = 5;
-        }
-        // DMESG("%d,%d", TheBuffer[i] - 128, val);
-    }
-    // DMESG("--");
-    // DMESG("RADIOSAMPLE: %d", radioSample);
-    if (radioSample > index && index >= 0)
-    {
-        DMESGF("CHIRP BEFORE RADIO");
-        DMESG("%d,%d", radioSample, index);
-        fiber_sleep(1);
-        index = this->slidingWindow(TheBuffer, index + 1);
-        // ubit->reset();
-        return false;
-    }
-    if (index < 0)
-    {
-        DMESGF("NEGATIVE INDEX: %d", index);
-        fiber_sleep(1);
-        // ubit->reset();
-        return false;
-    }
-    ubit->log.beginRow();
+    // int altSample = -1;
+    // int8_t *bufferData = (int8_t *)&TheBuffer[radioSample + 1];
+    // // bufferData = bufferData + radioSample;
+    // for (int i = radioSample + 1; i < TheBuffer.length(); i++)
+    // {
+    //     int item = (int)*bufferData++;
+    //     // DMESG("%d", item);
+    //     if (abs(item) > 1)
+    //     {
+    //         altSample = i;
+    //         break;
+    //     }
+    // }
 
-    ubit->log.logData("FOUND", firstFound ? "True" : "False");
-    ubit->log.logData("SAMPLE", index);
-    ubit->log.logData("RADIO SAMPLE", radioSample);
-    ubit->log.logData("RAW AUD", (int)TheBufferTime);
-    ubit->log.logData("SDIST",
-                      (int)(((index - radioSample) * SAMPLE_LENGTH_US) * SPEEDOFSOUND_CMUS));
-    ubit->log.logData("SAMPLE DIFF", index - radioSample);
-    ubit->log.logData("ALT SAMPLE", altSample - radioSample);
-    // DMESG("INDEX: %d", index);
-    this->time = TheBufferTime + (SAMPLE_LENGTH_US * index);
-    return true;
+    // int index = this->slidingWindow(TheBuffer, radioSample);
+    // // DMESG("--");
+    // // if ((index == radioSample) || (index == radioSample + 1))
+    // // {
+    // //     DMESG("TOO CLOSE");
+    // //     fiber_sleep(1);
+    // //     return false;
+    // // }
+    // bufferData = (int8_t *)&TheBuffer[0];
+    // for (int i = 0; i < TheBuffer.length(); i++)
+    // {
+    //     int item = (int)*bufferData++;
+    //     int val = 0;
+    //     if (index == i)
+    //     {
+    //         val = -3;
+    //     }
+    //     if (altSample == i)
+    //     {
+    //         val = 4;
+    //     }
+    //     if (radioSample == i)
+    //     {
+    //         val = 5;
+    //     }
+    //     // DMESG("%d,%d", TheBuffer[i] - 128, val);
+    // }
+    // // DMESG("--");
+    // // DMESG("RADIOSAMPLE: %d", radioSample);
+    // if (radioSample > index && index >= 0)
+    // {
+    //     DMESGF("CHIRP BEFORE RADIO");
+    //     DMESG("%d,%d", radioSample, index);
+    //     fiber_sleep(1);
+    //     index = this->slidingWindow(TheBuffer, index + 1);
+    //     // ubit->reset();
+    //     return false;
+    // }
+    // if (index < 0)
+    // {
+    //     DMESGF("NEGATIVE INDEX: %d", index);
+    //     fiber_sleep(1);
+    //     // ubit->reset();
+    //     return false;
+    // }
+    // ubit->log.beginRow();
+
+    // ubit->log.logData("FOUND", firstFound ? "True" : "False");
+    // ubit->log.logData("SAMPLE", index);
+    // ubit->log.logData("RADIO SAMPLE", radioSample);
+    // ubit->log.logData("RAW AUD", (int)TheBufferTime);
+    // ubit->log.logData("SDIST",
+    //                   (int)(((index - radioSample) * SAMPLE_LENGTH_US) * SPEEDOFSOUND_CMUS));
+    // ubit->log.logData("SAMPLE DIFF", index - radioSample);
+    // ubit->log.logData("ALT SAMPLE", altSample - radioSample);
+    // // DMESG("INDEX: %d", index);
+    // this->time = TheBufferTime + (SAMPLE_LENGTH_US * index);
+    return false;
 }

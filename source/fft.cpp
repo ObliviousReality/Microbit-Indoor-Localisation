@@ -5,6 +5,7 @@ FFT::FFT() {}
 
 bool FFT::processReal(int MagThreshold)
 {
+    DMESG("SN:%d", sampleNumber);
     kiss_fftr_cfg cfgr = kiss_fftr_alloc(sampleNumber, 0, NULL, NULL);
     kiss_fft_cpx out[sampleNumber];
     kiss_fftr(cfgr, this->FFTInput, out);
@@ -19,8 +20,12 @@ bool FFT::processReal(int MagThreshold)
 
     double max = 0;
     int index = 0;
+    float rate = (MIC_SAMPLE_RATE / sampleNumber);
     for (int i = 1; i < sampleNumber / 2; i++)
     {
+        if (mag[i] > 0)
+            PRINTTWOFLOATMSG("FREQ/MAG", (int)(rate * i), mag[i]);
+        // DMESG("FREQ: %d, MAG: %d", (int)(rate * i), mag[i]);
         if (mag[i] > max)
         {
             max = mag[i];
@@ -34,7 +39,6 @@ bool FFT::processReal(int MagThreshold)
         return false;
     }
 
-    float rate = (MIC_SAMPLE_RATE / sampleNumber);
     double freq = (rate) * (index + 1);
     this->frequency = freq;
     // DMESG("BIN WIDTH: %d", (int)(freq - (rate * (index))));
