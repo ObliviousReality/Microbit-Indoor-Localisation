@@ -87,8 +87,6 @@ void distanceCalculation(long samplerTime)
 
     uBit.log.endRow();
     uBit.display.print("Y");
-    // uBit.sleep(300);
-    // uBit.reset();
     long timeRightNow = uBit.timer.getTimeUs();
     DMESG("TIME: %d", timeRightNow - RadioTimer::radioTime);
     fiber_sleep(1);
@@ -119,10 +117,6 @@ void recv()
             outcome = sampler->processResult(RadioTimer::radioTime);
             break;
         }
-        // if (uBit.systemTime() - time > RECVTIMEOUT)
-        // {
-        //     uBit.reset();
-        // }
         fiber_sleep(1);
     }
     if (outcome)
