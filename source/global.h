@@ -24,7 +24,7 @@
 
 #define RECVTIMEOUT 5000
 
-#define MIC_SAMPLE_RATE 11111 // apparently
+#define MIC_SAMPLE_RATE 45454 // apparently
 
 #define SPEEDOFSOUND_MS 343 // m/s
 

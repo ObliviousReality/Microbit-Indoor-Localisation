@@ -44,7 +44,7 @@ bool FFT::processReal(int MagThreshold)
     this->magnitude5400 = mag[ind2];
     // if ((freq / 2) > TRANSMIT_FREQUENCY - 100 && (freq / 2) < TRANSMIT_FREQUENCY + 100)
     {
-        if (mag[ind] < MAG_THRESHOLD)
+        if (mag[ind] < MAG_THRESHOLD || mag[ind2] < MAG_THRESHOLD)
         {
             // DMESG("MAG TOO LOW");
             // if (mag[ind2] < MAG_THRESHOLD)

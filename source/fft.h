@@ -20,7 +20,7 @@ public:
 private:
     int sampleNumber = 0;
 
-    kiss_fft_scalar FFTInput[WINDOW_SIZE];
+    kiss_fft_scalar FFTInput[1024];
 
     float magnitude = 0;
     int magnitude5400 = 0;

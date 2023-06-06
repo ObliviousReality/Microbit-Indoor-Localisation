@@ -28,6 +28,8 @@ int dPointer = 0;
 
 float avgDistance = 0;
 
+int loopsDone = 0;
+
 void playTone(int f, int hiT, int loT = -1)
 {
     if (loT < 0)
@@ -91,7 +93,7 @@ void distanceCalculation(long samplerTime)
     // uBit.reset();
     long timeRightNow = uBit.timer.getTimeUs();
     DMESG("TIME: %d", timeRightNow - RadioTimer::radioTime);
-    fiber_sleep(1);
+    fiber_sleep(100);
     recv();
 }
 
@@ -109,6 +111,7 @@ void recv()
     {
         if (RadioTimer::pulseReceived)
         {
+            uBit.display.print("!");
             sampler->terminate();
         }
         if (sampler->foundResult() && !processedAlready)
@@ -119,11 +122,17 @@ void recv()
             outcome = sampler->processResult(RadioTimer::radioTime);
             break;
         }
-        if (uBit.systemTime() - time > RECVTIMEOUT)
-        {
-            uBit.reset();
-        }
+        // if (uBit.systemTime() - time > RECVTIMEOUT)
+        // {
+        //     uBit.reset();
+        // }
         fiber_sleep(1);
+    }
+    loopsDone++;
+    if (loopsDone == 1)
+    {
+        fiber_sleep(100);
+        recv();
     }
     if (outcome)
     {
@@ -135,6 +144,7 @@ void recv()
         uBit.display.print("N");
         fiber_sleep(1);
         // uBit.reset();
+        fiber_sleep(100);
         recv();
     }
 }
@@ -170,7 +180,8 @@ int main()
 
     AudioTimer::setTimer(&uBit.timer);
     RadioTimer::radioTimer = &uBit.timer;
-
+    uBit.audio.mic->requestSampleRate(44100);
+    PRINTFLOATMSG("SAMPLE RATE", uBit.audio.mic->getSampleRate());
     uint64_t val = uBit.getSerialNumber();
     for (int i = 0; i < 6; i++)
     {

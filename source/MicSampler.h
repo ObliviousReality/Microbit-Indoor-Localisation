@@ -27,6 +27,8 @@ public:
         this->outcome = true;
         this->doAnother = false;
         this->terminating = 0;
+        DMESG("STOPPED");
+        fiber_sleep(1);
     }
 
     void terminate() { this->terminating = 1; }
@@ -55,7 +57,8 @@ private:
 
     bool doAnother = false;
 
-    ManagedBuffer TheBuffer;
+    ManagedBuffer TheBuffer = ManagedBuffer(2048);
+    int bufCounter = 8;
     long TheBufferTime;
     int terminating = 0;
 
